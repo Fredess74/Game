@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { TransformControls, OrbitControls, Grid } from '@react-three/drei';
+import { TransformControls, Grid } from '@react-three/drei';
 import { useStore } from '../store/useStore';
 import { SceneObject } from './SceneObject';
 import { CameraManager } from './CameraManager';
@@ -37,7 +37,7 @@ const SceneObjectWrapper = ({ actor }: { actor: any }) => {
             {isSelected && (
                 <TransformControls
                     object={groupRef as any}
-                    mode="translate"
+                    mode="translate" // Could expose mode to UI later
                     onMouseUp={onTransformEnd}
                 />
             )}
@@ -51,7 +51,14 @@ export const SceneManager: React.FC = () => {
   const isCameraView = useStore((state) => state.isCameraView);
   const backgroundColor = useStore((state) => state.backgroundColor);
   const gridVisible = useStore((state) => state.gridVisible);
+  const ambientLightIntensity = useStore((state) => state.ambientLightIntensity);
+  const ambientLightColor = useStore((state) => state.ambientLightColor);
+  const fog = useStore((state) => state.fog);
 
+  // Filter out cameras (they are handled by CameraManager)
+  // Also, lights are actors now, so we render them via SceneObjectWrapper which calls SceneObject
+  // SceneObject handles rendering <pointLight> etc.
+  // So we just filter out cameras.
   const sceneActors = actors.filter(a => a.type !== 'camera');
 
   const handleBackgroundClick = () => {
@@ -62,8 +69,13 @@ export const SceneManager: React.FC = () => {
     <>
       <color attach="background" args={[backgroundColor]} />
 
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+      {fog && <fog attach="fog" args={[fog.color, fog.near, fog.far]} />}
+
+      <ambientLight intensity={ambientLightIntensity} color={ambientLightColor} />
+
+      {/* Default directional light if no lights exist? Or just rely on user adding lights? */}
+      {/* To ensure scene isn't pitch black if script has no lights, maybe keep a weak one or rely on ambient. */}
+      {/* If script defines lights, they will be in sceneActors. */}
 
       {gridVisible && <Grid infiniteGrid sectionColor="#4ade80" cellColor="#ffffff" fadeDistance={30} position={[0, -0.01, 0]} />}
 
@@ -77,8 +89,6 @@ export const SceneManager: React.FC = () => {
       {sceneActors.map((actor) => (
         <SceneObjectWrapper key={actor.id} actor={actor} />
       ))}
-
-      {!isCameraView && <OrbitControls makeDefault />}
     </>
   );
 };
