@@ -1,15 +1,16 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe } from '../types';
+import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe, Scene, CameraCut } from '../types';
+import { interpolate } from '../engine/EasingFunctions';
 
 interface StoreState extends ProjectState {
-  addActor: (type: ActorType, shape: ShapeType) => void;
+  addActor: (type: ActorType, shape?: ShapeType, initialProps?: Partial<Actor>) => void;
   removeActor: (id: string) => void;
   updateActor: (id: string, updates: Partial<Actor>) => void;
   setSelected: (id: string | null) => void;
   setPlaying: (isPlaying: boolean) => void;
   setTime: (time: number) => void;
-  addKeyframe: (targetId: string, property: 'position' | 'rotation' | 'scale') => void;
+  addKeyframe: (targetId: string, property: string) => void;
   isCameraView: boolean;
   setCameraView: (isCameraView: boolean) => void;
   isExporting: boolean;
@@ -17,16 +18,20 @@ interface StoreState extends ProjectState {
   loadProject: (project: Partial<ProjectState>) => void;
 
   // Environment
-  backgroundColor: string;
-  gridVisible: boolean;
-  setEnvironment: (updates: Partial<{ backgroundColor: string; gridVisible: boolean }>) => void;
+  setEnvironment: (updates: Partial<ProjectState>) => void;
+  setExportSettings: (settings: ProjectState['exportSettings']) => void;
+  setLastExportUrl: (url: string | null) => void;
 }
 
-const DEFAULT_ACTOR = {
+const DEFAULT_ACTOR: Partial<Actor> = {
   position: { x: 0, y: 0, z: 0 },
   rotation: { x: 0, y: 0, z: 0 },
   scale: { x: 1, y: 1, z: 1 },
-  color: '#4ade80', // brand-green
+  color: '#4ade80',
+  emissive: '#000000',
+  emissiveIntensity: 0,
+  opacity: 1,
+  visible: true,
 };
 
 const DEFAULT_CAMERA: Actor = {
@@ -38,6 +43,11 @@ const DEFAULT_CAMERA: Actor = {
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },
     color: '#ffffff',
+    emissive: '#000000',
+    emissiveIntensity: 0,
+    opacity: 1,
+    visible: true,
+    fov: 50,
 };
 
 // Helper: Interpolate Vector3
@@ -48,7 +58,7 @@ const lerpVector3 = (start: Vector3, end: Vector3, t: number): Vector3 => ({
 });
 
 // Helper: Get interpolated value
-const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: string, time: number, defaultValue: Vector3): Vector3 => {
+const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: string, time: number, defaultValue: any): any => {
   const targetKeyframes = keyframes
     .filter((k) => k.targetId === targetId && k.property === property)
     .sort((a, b) => a.time - b.time);
@@ -67,26 +77,55 @@ const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: strin
     const k2 = targetKeyframes[i + 1];
     if (time >= k1.time && time < k2.time) {
       const t = (time - k1.time) / (k2.time - k1.time);
-      return lerpVector3(k1.value, k2.value, t);
+      // Determine easing
+      const easing = k1.easing || 'linear';
+
+      // Interpolate
+      if (typeof k1.value === 'number' && typeof k2.value === 'number') {
+         return interpolate(k1.value, k2.value, t, easing);
+      } else if (typeof k1.value === 'object' && typeof k2.value === 'object') {
+         // Vector3
+         // Get eased T (0 to 1)
+         const easedT = interpolate(0, 1, t, easing);
+         return lerpVector3(k1.value as Vector3, k2.value as Vector3, easedT);
+      }
     }
   }
 
   return defaultValue;
 };
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>((set, get) => ({
   actors: [DEFAULT_CAMERA],
   keyframes: [],
+  scenes: [],
+  cameraCuts: [],
   currentTime: 0,
   isPlaying: false,
-  duration: 10,
+  duration: 60,
   selectedId: null,
   isCameraView: false,
   isExporting: false,
+
+  // Environment
   backgroundColor: '#1e293b',
   gridVisible: true,
+  ambientLightIntensity: 0.5,
+  ambientLightColor: '#ffffff',
+  fog: undefined,
+  exportSettings: {
+      resolution: '1080p',
+      fps: 30,
+      includeTitle: true,
+      title: 'My Movie',
+      subtitle: 'Created with Fredess',
+  },
+
+  lastExportUrl: null,
 
   setCameraView: (isCameraView) => set({ isCameraView }),
+  setExportSettings: (settings) => set({ exportSettings: settings }),
+  setLastExportUrl: (url) => set({ lastExportUrl: url }),
   setExporting: (isExporting) => set({ isExporting }),
   setEnvironment: (updates) => set((state) => ({ ...state, ...updates })),
 
@@ -94,29 +133,35 @@ export const useStore = create<StoreState>((set) => ({
       ...state,
       actors: project.actors || state.actors,
       keyframes: project.keyframes || state.keyframes,
+      scenes: project.scenes || state.scenes,
+      cameraCuts: project.cameraCuts || state.cameraCuts,
       duration: project.duration || state.duration,
       backgroundColor: project.backgroundColor || state.backgroundColor,
       gridVisible: project.gridVisible !== undefined ? project.gridVisible : state.gridVisible,
+      ambientLightIntensity: project.ambientLightIntensity !== undefined ? project.ambientLightIntensity : state.ambientLightIntensity,
+      ambientLightColor: project.ambientLightColor || state.ambientLightColor,
+      fog: project.fog || state.fog,
       currentTime: 0,
       isPlaying: false,
   })),
 
-  addActor: (type, shape) =>
+  addActor: (type, shape, initialProps) =>
     set((state) => ({
       actors: [
         ...state.actors,
         {
+          ...DEFAULT_ACTOR,
           id: uuidv4(),
           name: `${type}_${state.actors.length + 1}`,
           type,
-          shape,
-          ...DEFAULT_ACTOR,
+          shape: shape || 'box',
           position: {
-            x: (Math.random() - 0.5) * 2,
+            x: (Math.random() - 0.5) * 5,
             y: type === 'prop' ? 0.5 : 1,
-            z: (Math.random() - 0.5) * 2,
-          }
-        },
+            z: (Math.random() - 0.5) * 5,
+          },
+          ...initialProps
+        } as Actor,
       ],
     })),
 
@@ -138,11 +183,18 @@ export const useStore = create<StoreState>((set) => ({
         const actor = state.actors.find(a => a.id === targetId);
         if (!actor) return state;
 
-        const value = actor[property];
+        const value = (actor as any)[property];
+        if (value === undefined) return state;
 
         const filteredKeyframes = state.keyframes.filter(
             k => !(k.targetId === targetId && k.property === property && Math.abs(k.time - state.currentTime) < 0.01)
         );
+
+        // Clone value to avoid reference issues
+        let clonedValue = value;
+        if (typeof value === 'object') {
+            clonedValue = { ...value };
+        }
 
         return {
             keyframes: [
@@ -152,7 +204,8 @@ export const useStore = create<StoreState>((set) => ({
                     targetId,
                     property,
                     time: state.currentTime,
-                    value: { ...value },
+                    value: clonedValue,
+                    easing: 'linear',
                 }
             ]
         };
@@ -166,15 +219,20 @@ export const useStore = create<StoreState>((set) => ({
         const newTime = Math.max(0, Math.min(time, state.duration));
 
         const updatedActors = state.actors.map(actor => {
-            const hasKeyframes = state.keyframes.some(k => k.targetId === actor.id);
-            if (!hasKeyframes) return actor;
+            // Check if actor has any keyframes
+            const actorKeyframes = state.keyframes.filter(k => k.targetId === actor.id);
+            if (actorKeyframes.length === 0) return actor;
 
-            return {
-                ...actor,
-                position: getValueAtTime(state.keyframes, actor.id, 'position', newTime, actor.position),
-                rotation: getValueAtTime(state.keyframes, actor.id, 'rotation', newTime, actor.rotation),
-                scale: getValueAtTime(state.keyframes, actor.id, 'scale', newTime, actor.scale),
-            };
+            // Get all animated properties for this actor
+            const properties = Array.from(new Set(actorKeyframes.map(k => k.property)));
+
+            const updates: any = {};
+            properties.forEach(prop => {
+                const currentVal = (actor as any)[prop];
+                updates[prop] = getValueAtTime(state.keyframes, actor.id, prop, newTime, currentVal);
+            });
+
+            return { ...actor, ...updates };
         });
 
         return {

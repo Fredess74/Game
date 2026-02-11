@@ -1,9 +1,45 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { Text, Hud, OrthographicCamera } from '@react-three/drei';
 import { useStore } from '../store/useStore';
 
-export const VideoExporter = () => {
-    const { gl } = useThree();
+const SimpleTitleCard = ({ title, subtitle, opacity }: { title: string, subtitle: string, opacity: number }) => {
+    const { viewport } = useThree();
+    return (
+        <Hud renderPriority={2}>
+            <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={1} left={-viewport.width/2} right={viewport.width/2} top={viewport.height/2} bottom={-viewport.height/2} />
+             <mesh position={[0, 0, -1]}>
+                <planeGeometry args={[viewport.width, viewport.height]} />
+                <meshBasicMaterial color="#000000" transparent opacity={opacity} />
+            </mesh>
+            <Text
+                position={[0, 1, 0]}
+                fontSize={viewport.width * 0.05}
+                color="white"
+                anchorX="center"
+                anchorY="bottom"
+                fillOpacity={opacity}
+                font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+            >
+                {title.toUpperCase()}
+            </Text>
+            <Text
+                position={[0, -0.5, 0]}
+                fontSize={viewport.width * 0.02}
+                color="#4ade80"
+                anchorX="center"
+                anchorY="top"
+                fillOpacity={opacity}
+                 font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+            >
+                {subtitle}
+            </Text>
+        </Hud>
+    )
+}
+
+export const VideoExporter: React.FC = () => {
+    const { gl, setSize, size } = useThree();
     const isExporting = useStore(s => s.isExporting);
     const setExporting = useStore(s => s.setExporting);
     const duration = useStore(s => s.duration);
@@ -11,28 +47,67 @@ export const VideoExporter = () => {
     const setPlaying = useStore(s => s.setPlaying);
     const setTime = useStore(s => s.setTime);
     const setCameraView = useStore(s => s.setCameraView);
+    const exportSettings = useStore(s => s.exportSettings);
+    const setLastExportUrl = useStore(s => s.setLastExportUrl);
 
     const mediaRecorder = useRef<MediaRecorder | null>(null);
     const chunks = useRef<Blob[]>([]);
+    const [originalSize, setOriginalSize] = useState<{ width: number, height: number } | null>(null);
+    const [titleOpacity, setTitleOpacity] = useState(0);
+
+    // Title Card Logic
+    useFrame(() => {
+        if (isExporting && exportSettings.includeTitle) {
+            // Fade in 0-0.5s, Hold 0.5-1.5s, Fade out 1.5-2s
+            if (currentTime < 0.5) setTitleOpacity(currentTime / 0.5);
+            else if (currentTime < 1.5) setTitleOpacity(1);
+            else if (currentTime < 2) setTitleOpacity(1 - (currentTime - 1.5) / 0.5);
+            else setTitleOpacity(0);
+        } else {
+            setTitleOpacity(0);
+        }
+
+        // Auto-stop logic moved from component body to here to be safe
+        if (isExporting && currentTime >= duration - 0.1) {
+            if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+                mediaRecorder.current.stop();
+            }
+            // Logic handled in onstop
+        }
+    });
 
     useEffect(() => {
         if (isExporting) {
-            console.log("Starting Export...");
+            console.log("Starting Export...", exportSettings);
+
+            // 1. Save size and Resize
+            setOriginalSize({ width: size.width, height: size.height });
+
+            let width = 1920;
+            let height = 1080;
+            if (exportSettings.resolution === '720p') { width = 1280; height = 720; }
+            if (exportSettings.resolution === '4k') { width = 3840; height = 2160; }
+
+            // Force resize canvas (and buffer)
+            // Note: R3F might fight back if window resizes, but for now this sets the internal size
+            setSize(width, height);
+
+            // 2. Setup Scene
             setCameraView(true);
             setTime(0);
+            setPlaying(false); // Pause first
 
-            // Delay to allow scene to update
+            // 3. Start Recording after delay
             const timer = setTimeout(() => {
-                const stream = gl.domElement.captureStream(60);
+                const stream = gl.domElement.captureStream(exportSettings.fps);
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                                ? 'video/webm;codecs=vp9'
+                                : 'video/webm';
 
-                try {
-                    mediaRecorder.current = new MediaRecorder(stream, {
-                        mimeType: 'video/webm;codecs=vp9'
-                    });
-                } catch {
-                    console.warn("VP9 not supported, trying default");
-                    mediaRecorder.current = new MediaRecorder(stream);
-                }
+                mediaRecorder.current = new MediaRecorder(stream, {
+                    mimeType,
+                    videoBitsPerSecond: exportSettings.resolution === '4k' ? 25000000 : 8000000 // Higher bitrate for 4K
+                });
 
                 mediaRecorder.current.ondataavailable = (e) => {
                     if (e.data.size > 0) chunks.current.push(e.data);
@@ -41,33 +116,41 @@ export const VideoExporter = () => {
                 mediaRecorder.current.onstop = () => {
                     const blob = new Blob(chunks.current, { type: 'video/webm' });
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `movie_${Date.now()}.webm`;
-                    a.click();
+
+                    setLastExportUrl(url); // Save URL for modal
                     chunks.current = [];
+
+                    // Reset State
+                    setExporting(false);
+                    setPlaying(false);
+                    setCameraView(false);
                 };
 
                 mediaRecorder.current.start();
                 setPlaying(true);
-            }, 500);
+            }, 1000); // 1s delay to stabilize resizing
 
             return () => clearTimeout(timer);
         } else {
-             if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
-                 mediaRecorder.current.stop();
-                 setPlaying(false);
-             }
-        }
-    }, [isExporting, gl, setCameraView, setPlaying, setTime]);
-
-    useFrame(() => {
-        if (isExporting) {
-            if (currentTime >= duration - 0.1) {
-                setExporting(false);
+            // Restore size if we have one
+            if (originalSize) {
+                setSize(originalSize.width, originalSize.height);
+                setOriginalSize(null);
             }
         }
-    });
+    }, [isExporting]); // Run when isExporting changes
 
-    return null;
+    if (!isExporting) return null;
+
+    return (
+        <>
+            {exportSettings.includeTitle && titleOpacity > 0 && (
+                <SimpleTitleCard
+                    title={exportSettings.title}
+                    subtitle={exportSettings.subtitle}
+                    opacity={titleOpacity}
+                />
+            )}
+        </>
+    );
 };
