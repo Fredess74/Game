@@ -29,6 +29,9 @@ export interface Actor {
   metalness?: number;
   roughness?: number;
 
+  // Dialogue
+  dialogue?: string; // Text to display in speech bubble
+
   // Light specifics
   lightType?: LightType;
   intensity?: number;
@@ -42,9 +45,9 @@ export interface Actor {
 export interface Keyframe {
   id: string;
   targetId: string;
-  property: string; // 'position', 'rotation', 'scale', 'emissiveIntensity', 'opacity', etc.
+  property: string; // 'position', 'rotation', 'scale', 'emissiveIntensity', 'opacity', 'dialogue' etc.
   time: number;
-  value: Vector3 | number; // Vector3 for transform, number for scalars
+  value: Vector3 | number | string; // Vector3 for transform, number for scalars, string for text
   easing: EasingType;
 }
 
@@ -54,6 +57,19 @@ export interface CameraCut {
   cameraId: string;
   transition: 'cut' | 'smooth';
   transitionDuration?: number;
+}
+
+export interface Overlay {
+    id: string;
+    startTime: number;
+    duration: number;
+    text?: string;
+    type: 'text' | 'fade_black' | 'fade_white';
+    style?: {
+        fontSize?: number;
+        color?: string;
+        position?: 'center' | 'bottom' | 'top';
+    };
 }
 
 export interface Scene {
@@ -68,6 +84,7 @@ export interface ProjectState {
   keyframes: Keyframe[];
   scenes: Scene[];
   cameraCuts: CameraCut[];
+  overlays: Overlay[]; // New overlays array
 
   currentTime: number;
   isPlaying: boolean;

@@ -74,8 +74,6 @@ export const SceneObject: React.FC<SceneObjectProps> = ({ actor }) => {
   // Shapes
   const renderShape = () => {
       // Determine the correct renderer key
-      // If the actor is a character, it forces the humanoid shape unless explicitly overridden?
-      // The original logic was: if (actor.type === 'character' || actor.shape === 'humanoid') -> Humanoid
       const shapeKey = (actor.type === 'character' || actor.shape === 'humanoid')
           ? 'humanoid'
           : actor.shape;
@@ -94,10 +92,25 @@ export const SceneObject: React.FC<SceneObjectProps> = ({ actor }) => {
   return (
     <group>
         {renderShape()}
+
+        {/* Selection Tag */}
         {isSelected && (
             <Html position={[0, 2, 0]} center>
                 <div className="bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none whitespace-nowrap border border-brand-green/50 z-50">
                     {actor.name}
+                </div>
+            </Html>
+        )}
+
+        {/* Speech Bubble */}
+        {actor.dialogue && (
+             <Html position={[0, 2.8, 0]} center zIndexRange={[100, 0]}>
+                <div className="pointer-events-none transform -translate-y-1/2">
+                    <div className="bg-white text-black text-sm px-4 py-2 rounded-2xl shadow-xl border-2 border-gray-800 relative max-w-[250px] text-center font-sans font-medium min-w-[100px]">
+                        {actor.dialogue}
+                        {/* Triangle pointer */}
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-[-8px] w-4 h-4 bg-white rotate-45 border-b-2 border-r-2 border-gray-800"></div>
+                    </div>
                 </div>
             </Html>
         )}

@@ -27,6 +27,11 @@ export const getValueAtTime = (keyframes: Keyframe[], targetId: string, property
     const k1 = targetKeyframes[i];
     const k2 = targetKeyframes[i + 1];
     if (time >= k1.time && time < k2.time) {
+      // Immediate return for strings (Step interpolation)
+      if (typeof k1.value === 'string' || typeof k2.value === 'string') {
+          return k1.value;
+      }
+
       const t = (time - k1.time) / (k2.time - k1.time);
       // Determine easing
       const easing = k1.easing || 'linear';

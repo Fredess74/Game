@@ -1,12 +1,18 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, ProjectState } from '../types';
+import type { Actor, ActorType, ShapeType, ProjectState, Overlay } from '../types';
 import { getValueAtTime } from './utils';
 
 interface StoreState extends ProjectState {
   addActor: (type: ActorType, shape?: ShapeType, initialProps?: Partial<Actor>) => void;
   removeActor: (id: string) => void;
   updateActor: (id: string, updates: Partial<Actor>) => void;
+
+  // Overlays
+  addOverlay: (overlay: Omit<Overlay, 'id'>) => void;
+  updateOverlay: (id: string, updates: Partial<Overlay>) => void;
+  removeOverlay: (id: string) => void;
+
   setSelected: (id: string | null) => void;
   setPlaying: (isPlaying: boolean) => void;
   setTime: (time: number) => void;
@@ -56,6 +62,7 @@ export const useStore = create<StoreState>((set, get) => ({
   keyframes: [],
   scenes: [],
   cameraCuts: [],
+  overlays: [],
   currentTime: 0,
   isPlaying: false,
   duration: 60,
@@ -91,6 +98,7 @@ export const useStore = create<StoreState>((set, get) => ({
       keyframes: project.keyframes || state.keyframes,
       scenes: project.scenes || state.scenes,
       cameraCuts: project.cameraCuts || state.cameraCuts,
+      overlays: project.overlays || state.overlays,
       duration: project.duration || state.duration,
       backgroundColor: project.backgroundColor || state.backgroundColor,
       gridVisible: project.gridVisible !== undefined ? project.gridVisible : state.gridVisible,
@@ -133,6 +141,21 @@ export const useStore = create<StoreState>((set, get) => ({
             actors: state.actors.map((a) => (a.id === id ? { ...a, ...updates } : a)),
         };
     }),
+
+  addOverlay: (overlay) =>
+    set((state) => ({
+        overlays: [...state.overlays, { ...overlay, id: uuidv4() }]
+    })),
+
+  updateOverlay: (id, updates) =>
+    set((state) => ({
+        overlays: state.overlays.map(o => o.id === id ? { ...o, ...updates } : o)
+    })),
+
+  removeOverlay: (id) =>
+    set((state) => ({
+        overlays: state.overlays.filter(o => o.id !== id)
+    })),
 
   addKeyframe: (targetId, property) =>
     set((state) => {
