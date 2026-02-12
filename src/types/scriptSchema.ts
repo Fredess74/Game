@@ -21,11 +21,33 @@ export const EnvironmentSchema = z.object({
   gridVisible: z.boolean().default(true),
 });
 
-export const ActorTypeSchema = z.enum(['character', 'prop', 'set_piece', 'light', 'vfx', 'camera']);
-export const ShapeTypeSchema = z.enum([
-  'box', 'sphere', 'capsule', 'cylinder', 'cone', 'torus', 'plane', 'humanoid', 'cube_character'
+export const ActorTypeSchema = z.enum([
+  'character', 'prop', 'set_piece', 'light', 'vfx', 'camera', 'model', 'sprite', 'voxel'
 ]);
+
+export const ShapeTypeSchema = z.enum([
+  'box', 'sphere', 'capsule', 'cylinder', 'cone', 'torus', 'plane', 'humanoid', 'cube_character', 'model', 'sprite', 'voxel'
+]);
+
 export const LightTypeSchema = z.enum(['point', 'spot', 'directional']);
+
+export const ModelPropertiesSchema = z.object({
+  url: z.string(),
+  format: z.enum(['gltf', 'glb', 'obj', 'vox']),
+});
+
+export const SpritePropertiesSchema = z.object({
+  url: z.string(),
+  billboardMode: z.boolean().default(true),
+  columns: z.number().optional(),
+  rows: z.number().optional(),
+  frameRate: z.number().optional(),
+});
+
+export const VoxelPropertiesSchema = z.object({
+  voxelData: z.string().optional(),
+  gridSize: z.number().optional(),
+});
 
 export const ActorSchema = z.object({
   id: z.string(),
@@ -44,6 +66,9 @@ export const ActorSchema = z.object({
   rotation: Vector3Schema,
   scale: Vector3Schema,
   target: z.string().optional(), // For lights/cameras to look at actor ID
+  model: ModelPropertiesSchema.optional(),
+  sprite: SpritePropertiesSchema.optional(),
+  voxel: VoxelPropertiesSchema.optional(),
 });
 
 export const CameraSchema = z.object({
@@ -68,6 +93,21 @@ export const ActorKeyframeSchema = z.object({
   actorId: z.string(),
   property: z.string(), // 'position', 'rotation', 'scale', 'emissiveIntensity', etc.
   frames: z.array(KeyframeFrameSchema),
+});
+
+export const AnimationClipSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  duration: z.number(),
+  tracks: z.array(z.any()), // Placeholder for now, can be more specific
+});
+
+export const AnimationEventSchema = z.object({
+  id: z.string(),
+  time: z.number(),
+  type: z.enum(['play_clip', 'stop_clip', 'set_property', 'custom']),
+  targetId: z.string(),
+  parameters: z.record(z.any()),
 });
 
 export const CameraCutSchema = z.object({
@@ -97,6 +137,8 @@ export const ScriptSchema = z.object({
   actors: z.array(ActorSchema),
   cameras: z.array(CameraSchema),
   timeline: TimelineSchema,
+  clips: z.array(AnimationClipSchema).optional(),
+  events: z.array(AnimationEventSchema).optional(),
 });
 
 export type Script = z.infer<typeof ScriptSchema>;
