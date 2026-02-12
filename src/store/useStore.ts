@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, ProjectState } from '../types';
+import type { Actor, ActorType, ShapeType, ProjectState, AnimationClip, AnimationEvent } from '../types';
 import { getValueAtTime } from './utils';
 
 interface StoreState extends ProjectState {
@@ -11,6 +11,11 @@ interface StoreState extends ProjectState {
   setPlaying: (isPlaying: boolean) => void;
   setTime: (time: number) => void;
   addKeyframe: (targetId: string, property: string) => void;
+
+  // Animation System
+  addClip: (clip: AnimationClip) => void;
+  addEvent: (event: AnimationEvent) => void;
+
   isCameraView: boolean;
   setCameraView: (isCameraView: boolean) => void;
   isExporting: boolean;
@@ -51,11 +56,13 @@ const DEFAULT_CAMERA: Actor = {
 };
 
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   actors: [DEFAULT_CAMERA],
   keyframes: [],
   scenes: [],
   cameraCuts: [],
+  clips: [],
+  events: [],
   currentTime: 0,
   isPlaying: false,
   duration: 60,
@@ -85,12 +92,17 @@ export const useStore = create<StoreState>((set, get) => ({
   setExporting: (isExporting) => set({ isExporting }),
   setEnvironment: (updates) => set((state) => ({ ...state, ...updates })),
 
+  addClip: (clip) => set((state) => ({ clips: [...state.clips, clip] })),
+  addEvent: (event) => set((state) => ({ events: [...state.events, event] })),
+
   loadProject: (project) => set((state) => ({
       ...state,
       actors: project.actors || state.actors,
       keyframes: project.keyframes || state.keyframes,
       scenes: project.scenes || state.scenes,
       cameraCuts: project.cameraCuts || state.cameraCuts,
+      clips: project.clips || state.clips || [],
+      events: project.events || state.events || [],
       duration: project.duration || state.duration,
       backgroundColor: project.backgroundColor || state.backgroundColor,
       gridVisible: project.gridVisible !== undefined ? project.gridVisible : state.gridVisible,
@@ -174,22 +186,41 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => {
         const newTime = Math.max(0, Math.min(time, state.duration));
 
+        // 1. Level 1: Keyframes
         const updatedActors = state.actors.map(actor => {
-            // Check if actor has any keyframes
             const actorKeyframes = state.keyframes.filter(k => k.targetId === actor.id);
             if (actorKeyframes.length === 0) return actor;
 
-            // Get all animated properties for this actor
             const properties = Array.from(new Set(actorKeyframes.map(k => k.property)));
-
             const updates: any = {};
             properties.forEach(prop => {
                 const currentVal = (actor as any)[prop];
                 updates[prop] = getValueAtTime(state.keyframes, actor.id, prop, newTime, currentVal);
             });
-
             return { ...actor, ...updates };
         });
+
+        // 2. Level 2 & 3: Clips & Events (Foundation)
+        // For now, we just placeholder the integration.
+        // A real implementation would:
+        // a. Determine active clips from events (e.g., play_clip event at T < newTime)
+        // b. Apply clip tracks relative to the start time of the clip.
+
+        // Example logic (commented out until Clip Editor is built):
+        /*
+        state.events.forEach(event => {
+            if (event.type === 'play_clip' && event.time <= newTime) {
+                const clip = state.clips.find(c => c.id === event.parameters.clipId);
+                if (clip) {
+                    const clipTime = newTime - event.time;
+                    if (clipTime <= clip.duration || event.parameters.loop) {
+                         const timeInClip = event.parameters.loop ? clipTime % clip.duration : clipTime;
+                         // Apply clip tracks to target actor...
+                    }
+                }
+            }
+        });
+        */
 
         return {
             currentTime: newTime,

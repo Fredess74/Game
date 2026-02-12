@@ -1,11 +1,61 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #1e293b;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+@theme {
+  --color-editor-bg: #121212;
+  --color-editor-panel: #1e1e1e;
+  --color-editor-panelHover: #2d2d2d;
+  --color-editor-border: #333333;
+  --color-editor-input: #262626;
+  --color-editor-text: #e0e0e0;
+  --color-editor-muted: #888888;
+  --color-editor-accent: #4ade80;
+  --color-editor-danger: #ef4444;
+
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-editor-bg text-editor-text font-sans antialiased overflow-hidden;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-editor-panel border border-editor-border rounded-md shadow-sm;
+  }
+  .input-base {
+    @apply bg-editor-input border border-editor-border rounded px-2 py-1 text-sm focus:border-editor-accent focus:outline-none transition-colors;
+  }
+
+  /* Buttons */
+  .btn-base {
+    @apply px-3 py-1.5 rounded text-sm font-medium transition-colors;
+  }
+  .btn-primary {
+    @apply px-3 py-1.5 rounded text-sm font-medium transition-colors bg-editor-accent text-black hover:bg-emerald-400 active:bg-emerald-500;
+  }
+  .btn-secondary {
+    @apply px-3 py-1.5 rounded text-sm font-medium transition-colors bg-editor-panelHover text-editor-text border border-editor-border hover:bg-editor-border;
+  }
+
+  /* Tabs */
+  .tab-active {
+    @apply text-editor-accent border-b-2 border-editor-accent pb-1;
+  }
+  .tab-inactive {
+    @apply text-editor-muted hover:text-white pb-1 transition-colors;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-editor-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-editor-border rounded-full hover:bg-neutral-600;
+  }
 }
