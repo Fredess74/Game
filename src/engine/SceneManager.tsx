@@ -48,7 +48,6 @@ const SceneObjectWrapper = ({ actor }: { actor: any }) => {
 export const SceneManager: React.FC = () => {
   const actors = useStore((state) => state.actors);
   const setSelected = useStore((state) => state.setSelected);
-  const isCameraView = useStore((state) => state.isCameraView);
   const backgroundColor = useStore((state) => state.backgroundColor);
   const gridVisible = useStore((state) => state.gridVisible);
   const ambientLightIntensity = useStore((state) => state.ambientLightIntensity);
