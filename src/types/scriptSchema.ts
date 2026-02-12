@@ -41,6 +41,38 @@ export const ShapeTypeSchema = z.enum([
 ]);
 export const LightTypeSchema = z.enum(['point', 'spot', 'directional']);
 
+// -- New Schemas from merge --
+
+// Feature: Humanoid Upgrade
+export const EmotionTypeSchema = z.enum(['neutral', 'happy', 'sad', 'angry', 'surprised']);
+export const ClothingSchema = z.object({
+  head: z.string().optional(),
+  top: z.string().optional(),
+  bottom: z.string().optional(),
+  shoes: z.string().optional(),
+  accessory: z.string().optional(),
+});
+export const PoseSchema = z.record(z.string(), Vector3Schema);
+
+// Feature: External Models
+export const ModelPropertiesSchema = z.object({
+  url: z.string(),
+  format: z.enum(['gltf', 'glb', 'obj', 'vox']),
+});
+
+export const SpritePropertiesSchema = z.object({
+  url: z.string(),
+  billboardMode: z.boolean().default(true),
+  columns: z.number().optional(),
+  rows: z.number().optional(),
+  frameRate: z.number().optional(),
+});
+
+export const VoxelPropertiesSchema = z.object({
+  voxelData: z.string().optional(),
+  gridSize: z.number().optional(),
+});
+
 export const ActorSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -58,6 +90,14 @@ export const ActorSchema = z.object({
   rotation: Vector3Schema,
   scale: Vector3Schema,
   target: z.string().optional(), // For lights/cameras to look at actor ID
+
+  // Merge additions
+  emotion: EmotionTypeSchema.optional(),
+  clothing: ClothingSchema.optional(),
+  pose: PoseSchema.optional(),
+  model: ModelPropertiesSchema.optional(),
+  sprite: SpritePropertiesSchema.optional(),
+  voxel: VoxelPropertiesSchema.optional(),
 });
 
 export const CameraSchema = z.object({
