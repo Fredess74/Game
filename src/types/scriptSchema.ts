@@ -27,6 +27,18 @@ export const ShapeTypeSchema = z.enum([
 ]);
 export const LightTypeSchema = z.enum(['point', 'spot', 'directional']);
 
+export const EmotionTypeSchema = z.enum(['neutral', 'happy', 'sad', 'angry', 'surprised']);
+
+export const ClothingSchema = z.object({
+  head: z.string().optional(),
+  top: z.string().optional(),
+  bottom: z.string().optional(),
+  shoes: z.string().optional(),
+  accessory: z.string().optional(),
+});
+
+export const PoseSchema = z.record(Vector3Schema);
+
 export const ActorSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,6 +56,9 @@ export const ActorSchema = z.object({
   rotation: Vector3Schema,
   scale: Vector3Schema,
   target: z.string().optional(), // For lights/cameras to look at actor ID
+  emotion: EmotionTypeSchema.optional(),
+  clothing: ClothingSchema.optional(),
+  pose: PoseSchema.optional(),
 });
 
 export const CameraSchema = z.object({

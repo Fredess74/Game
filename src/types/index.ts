@@ -8,6 +8,19 @@ export type ActorType = 'character' | 'prop' | 'set_piece' | 'light' | 'camera' 
 export type ShapeType = 'box' | 'sphere' | 'capsule' | 'cylinder' | 'cone' | 'torus' | 'plane' | 'humanoid' | 'cube_character';
 export type LightType = 'point' | 'spot' | 'directional';
 export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'easeInBack' | 'easeOutBounce' | 'step';
+export type EmotionType = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
+
+export interface Clothing {
+  head?: string;
+  top?: string;
+  bottom?: string;
+  shoes?: string;
+  accessory?: string;
+}
+
+export interface Pose {
+  [key: string]: Vector3;
+}
 
 export interface Actor {
   id: string;
@@ -37,6 +50,11 @@ export interface Actor {
   // Camera specifics
   fov?: number;
   lookAt?: string | Vector3; // ID or static point
+
+  // Character specifics
+  emotion?: EmotionType;
+  clothing?: Clothing;
+  pose?: Pose;
 }
 
 export interface Keyframe {
