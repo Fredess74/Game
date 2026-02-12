@@ -52,8 +52,11 @@ export const CameraManager: React.FC = () => {
     const cameraActors = useMemo(() => actors.filter(a => a.type === 'camera'), [actors]);
 
     // Determine active camera based on cuts
+    const sortedCuts = useMemo(() => {
+        return [...cameraCuts].sort((a, b) => a.time - b.time);
+    }, [cameraCuts]);
+
     const activeCut = useMemo(() => {
-        const sortedCuts = [...cameraCuts].sort((a, b) => a.time - b.time);
         let active = null;
         for (const cut of sortedCuts) {
             if (cut.time <= currentTime) {
@@ -63,7 +66,7 @@ export const CameraManager: React.FC = () => {
             }
         }
         return active;
-    }, [cameraCuts, currentTime]);
+    }, [sortedCuts, currentTime]);
 
     const activeCameraId = activeCut ? activeCut.cameraId : (cameraActors.length > 0 ? cameraActors[0].id : null);
     const activeCameraActor = cameraActors.find(a => a.id === activeCameraId);
@@ -77,7 +80,7 @@ export const CameraManager: React.FC = () => {
             cam.position.set(activeCameraActor.position.x, activeCameraActor.position.y, activeCameraActor.position.z);
 
             if (activeCameraActor.lookAt) {
-                let targetPos = new THREE.Vector3(0, 0, 0);
+                const targetPos = new THREE.Vector3(0, 0, 0);
                 if (typeof activeCameraActor.lookAt === 'string') {
                     // Look at actor
                     const targetActor = actors.find(a => a.id === activeCameraActor.lookAt);
