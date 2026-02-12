@@ -1,10 +1,9 @@
 import React, { useRef, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { Play, Pause, Square, Key, Video, Box, User, Lightbulb, Zap, Music } from 'lucide-react';
-import { interpolate } from '../engine/EasingFunctions';
 
 // Helper to get icon for actor type
-const getActorIcon = (type: string, shape?: string) => {
+const getActorIcon = (type: string, _shape?: string) => {
     switch (type) {
         case 'character': return <User size={12} />;
         case 'prop': return <Box size={12} />;

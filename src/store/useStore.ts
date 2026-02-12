@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe, Scene, CameraCut } from '../types';
+import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe } from '../types';
 import { interpolate } from '../engine/EasingFunctions';
 
 interface StoreState extends ProjectState {
@@ -58,12 +58,8 @@ const lerpVector3 = (start: Vector3, end: Vector3, t: number): Vector3 => ({
 });
 
 // Helper: Get interpolated value
-const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: string, time: number, defaultValue: any): any => {
-  const targetKeyframes = keyframes
-    .filter((k) => k.targetId === targetId && k.property === property)
-    .sort((a, b) => a.time - b.time);
-
-  if (targetKeyframes.length === 0) return defaultValue;
+const getValueAtTime = (targetKeyframes: Keyframe[], time: number, defaultValue: any): any => {
+  if (!targetKeyframes || targetKeyframes.length === 0) return defaultValue;
 
   // Before first keyframe
   if (time <= targetKeyframes[0].time) return targetKeyframes[0].value;
@@ -95,7 +91,7 @@ const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: strin
   return defaultValue;
 };
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   actors: [DEFAULT_CAMERA],
   keyframes: [],
   scenes: [],
@@ -218,19 +214,36 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => {
         const newTime = Math.max(0, Math.min(time, state.duration));
 
-        const updatedActors = state.actors.map(actor => {
-            // Check if actor has any keyframes
-            const actorKeyframes = state.keyframes.filter(k => k.targetId === actor.id);
-            if (actorKeyframes.length === 0) return actor;
+        // Group keyframes by targetId and property
+        const keyframeMap = new Map<string, Map<string, Keyframe[]>>();
 
-            // Get all animated properties for this actor
-            const properties = Array.from(new Set(actorKeyframes.map(k => k.property)));
+        for (const k of state.keyframes) {
+            if (!keyframeMap.has(k.targetId)) {
+                keyframeMap.set(k.targetId, new Map());
+            }
+            const props = keyframeMap.get(k.targetId)!;
+            if (!props.has(k.property)) {
+                props.set(k.property, []);
+            }
+            props.get(k.property)!.push(k);
+        }
+
+        // Sort keyframes by time
+        for (const props of keyframeMap.values()) {
+            for (const frames of props.values()) {
+                frames.sort((a, b) => a.time - b.time);
+            }
+        }
+
+        const updatedActors = state.actors.map(actor => {
+            const actorProps = keyframeMap.get(actor.id);
+            if (!actorProps) return actor;
 
             const updates: any = {};
-            properties.forEach(prop => {
+            for (const [prop, frames] of actorProps.entries()) {
                 const currentVal = (actor as any)[prop];
-                updates[prop] = getValueAtTime(state.keyframes, actor.id, prop, newTime, currentVal);
-            });
+                updates[prop] = getValueAtTime(frames, newTime, currentVal);
+            }
 
             return { ...actor, ...updates };
         });
