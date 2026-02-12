@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe, Scene, CameraCut } from '../types';
+import type { Actor, ActorType, ShapeType, Vector3, ProjectState, Keyframe } from '../types';
 import { interpolate } from '../engine/EasingFunctions';
 
 interface StoreState extends ProjectState {
@@ -95,7 +95,7 @@ const getValueAtTime = (keyframes: Keyframe[], targetId: string, property: strin
   return defaultValue;
 };
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   actors: [DEFAULT_CAMERA],
   keyframes: [],
   scenes: [],

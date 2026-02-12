@@ -3,18 +3,23 @@ import { useStore } from '../store/useStore';
 import * as THREE from 'three';
 import { Eye, EyeOff } from 'lucide-react';
 
-const NumberInput = ({ label, value, onChange, step = 0.1 }: { label: string, value: number, onChange: (v: number) => void, step?: number }) => (
-    <div className="flex flex-col gap-1">
-        <span className="text-[10px] text-slate-500 text-center">{label}</span>
-        <input
-            type="number"
-            step={step}
-            value={Number(value).toFixed(2)}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            className="bg-slate-800 text-xs px-1 py-1 rounded text-center w-full border border-slate-700 focus:border-brand-green outline-none text-white"
-        />
-    </div>
-);
+const NumberInput = ({ label, value, onChange, step = 0.1, groupLabel }: { label: string, value: number, onChange: (v: number) => void, step?: number, groupLabel?: string }) => {
+    const id = React.useId();
+    return (
+        <div className="flex flex-col gap-1">
+            <label htmlFor={id} className="text-[10px] text-slate-500 text-center cursor-pointer">{label}</label>
+            <input
+                id={id}
+                type="number"
+                step={step}
+                value={Number(value).toFixed(2)}
+                onChange={(e) => onChange(parseFloat(e.target.value))}
+                className="bg-slate-800 text-xs px-1 py-1 rounded text-center w-full border border-slate-700 focus:border-brand-green outline-none text-white"
+                aria-label={groupLabel ? `${groupLabel} ${label}` : label}
+            />
+        </div>
+    );
+};
 
 export const PropertiesPanel: React.FC = () => {
     const selectedId = useStore((state) => state.selectedId);
@@ -40,12 +45,14 @@ export const PropertiesPanel: React.FC = () => {
                             value={backgroundColor}
                             onChange={(e) => setEnvironment({ backgroundColor: e.target.value })}
                             className="w-8 h-8 bg-transparent border-0 p-0 rounded cursor-pointer overflow-hidden"
+                            aria-label="Background Color Picker"
                         />
                         <input
                              type="text"
                              value={backgroundColor}
                              onChange={(e) => setEnvironment({ backgroundColor: e.target.value })}
                              className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:border-brand-green outline-none uppercase"
+                             aria-label="Background Color Hex"
                         />
                     </div>
                  </div>
@@ -64,23 +71,24 @@ export const PropertiesPanel: React.FC = () => {
                  {/* Fog Settings */}
                  <div className="pt-4 border-t border-slate-800 flex flex-col gap-2">
                      <div className="flex items-center justify-between">
-                         <label className="text-xs text-slate-400">Fog</label>
+                         <label className="text-xs text-slate-400" id="fog-label">Fog</label>
                          <input
                             type="checkbox"
                             checked={!!fog}
                             onChange={(e) => setEnvironment({ fog: e.target.checked ? { color: backgroundColor, near: 5, far: 20 } : undefined })}
                             className="rounded border-slate-700 bg-slate-800 text-brand-green"
+                            aria-labelledby="fog-label"
                          />
                      </div>
                      {fog && (
                          <>
                              <div className="flex gap-2">
-                                <span className="text-[10px] w-8">Near</span>
-                                <input type="range" min="0" max="50" value={fog.near} onChange={(e) => setEnvironment({ fog: { ...fog, near: parseFloat(e.target.value) } })} className="flex-1" />
+                                <span className="text-[10px] w-8" id="fog-near-label">Near</span>
+                                <input type="range" min="0" max="50" value={fog.near} onChange={(e) => setEnvironment({ fog: { ...fog, near: parseFloat(e.target.value) } })} className="flex-1" aria-labelledby="fog-near-label" />
                              </div>
                              <div className="flex gap-2">
-                                <span className="text-[10px] w-8">Far</span>
-                                <input type="range" min="10" max="100" value={fog.far} onChange={(e) => setEnvironment({ fog: { ...fog, far: parseFloat(e.target.value) } })} className="flex-1" />
+                                <span className="text-[10px] w-8" id="fog-far-label">Far</span>
+                                <input type="range" min="10" max="100" value={fog.far} onChange={(e) => setEnvironment({ fog: { ...fog, far: parseFloat(e.target.value) } })} className="flex-1" aria-labelledby="fog-far-label" />
                              </div>
                          </>
                      )}
@@ -104,14 +112,16 @@ export const PropertiesPanel: React.FC = () => {
                  <button
                     onClick={() => updateActor(selectedActor.id, { visible: !selectedActor.visible })}
                     className={`text-xs p-1 rounded ${selectedActor.visible ? 'text-slate-400 hover:text-white' : 'text-slate-600'}`}
+                    aria-label={selectedActor.visible ? "Hide Object" : "Show Object"}
                  >
                      {selectedActor.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                  </button>
              </div>
 
              <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400">Name</label>
+                <label className="text-xs text-slate-400" htmlFor="actor-name">Name</label>
                 <input
+                    id="actor-name"
                     type="text"
                     value={selectedActor.name}
                     onChange={(e) => updateActor(selectedActor.id, { name: e.target.value })}
@@ -130,12 +140,14 @@ export const PropertiesPanel: React.FC = () => {
                         value={selectedActor.color}
                         onChange={(e) => updateActor(selectedActor.id, { color: e.target.value })}
                         className="w-8 h-8 bg-transparent border-0 p-0 rounded cursor-pointer overflow-hidden"
+                        aria-label="Object Color Picker"
                     />
                     <input
                          type="text"
                          value={selectedActor.color}
                          onChange={(e) => updateActor(selectedActor.id, { color: e.target.value })}
                          className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:border-brand-green outline-none uppercase"
+                         aria-label="Object Color Hex"
                     />
                 </div>
              </div>
@@ -148,6 +160,7 @@ export const PropertiesPanel: React.FC = () => {
                         value={selectedActor.emissive || '#000000'}
                         onChange={(e) => updateActor(selectedActor.id, { emissive: e.target.value })}
                         className="w-8 h-8 bg-transparent border-0 p-0 rounded cursor-pointer overflow-hidden"
+                        aria-label="Emissive Color Picker"
                     />
                     <input
                         type="range"
@@ -155,13 +168,14 @@ export const PropertiesPanel: React.FC = () => {
                         value={selectedActor.emissiveIntensity || 0}
                         onChange={(e) => updateActor(selectedActor.id, { emissiveIntensity: parseFloat(e.target.value) })}
                         className="flex-1"
+                        aria-label="Emissive Intensity"
                     />
                 </div>
              </div>
 
              <div className="flex flex-col gap-2">
                 <div className="flex justify-between">
-                    <label className="text-xs text-slate-400">Opacity</label>
+                    <label className="text-xs text-slate-400" id="opacity-label">Opacity</label>
                     <span className="text-[10px] text-slate-500">{(selectedActor.opacity * 100).toFixed(0)}%</span>
                 </div>
                 <input
@@ -170,6 +184,7 @@ export const PropertiesPanel: React.FC = () => {
                     value={selectedActor.opacity}
                     onChange={(e) => updateActor(selectedActor.id, { opacity: parseFloat(e.target.value) })}
                     className="w-full"
+                    aria-labelledby="opacity-label"
                 />
              </div>
 
@@ -177,27 +192,27 @@ export const PropertiesPanel: React.FC = () => {
              <div className="flex flex-col gap-2 pt-4 border-t border-slate-800">
                 <label className="text-xs text-brand-green font-bold">Position</label>
                 <div className="grid grid-cols-3 gap-2">
-                    <NumberInput label="X" value={selectedActor.position.x} onChange={(v) => updatePos('x', v)} />
-                    <NumberInput label="Y" value={selectedActor.position.y} onChange={(v) => updatePos('y', v)} />
-                    <NumberInput label="Z" value={selectedActor.position.z} onChange={(v) => updatePos('z', v)} />
+                    <NumberInput groupLabel="Position" label="X" value={selectedActor.position.x} onChange={(v) => updatePos('x', v)} />
+                    <NumberInput groupLabel="Position" label="Y" value={selectedActor.position.y} onChange={(v) => updatePos('y', v)} />
+                    <NumberInput groupLabel="Position" label="Z" value={selectedActor.position.z} onChange={(v) => updatePos('z', v)} />
                 </div>
              </div>
 
              <div className="flex flex-col gap-2 pt-4 border-t border-slate-800">
                 <label className="text-xs text-brand-green font-bold">Rotation (°)</label>
                 <div className="grid grid-cols-3 gap-2">
-                    <NumberInput label="X" value={THREE.MathUtils.radToDeg(selectedActor.rotation.x)} onChange={(v) => updateRot('x', v)} step={5} />
-                    <NumberInput label="Y" value={THREE.MathUtils.radToDeg(selectedActor.rotation.y)} onChange={(v) => updateRot('y', v)} step={5} />
-                    <NumberInput label="Z" value={THREE.MathUtils.radToDeg(selectedActor.rotation.z)} onChange={(v) => updateRot('z', v)} step={5} />
+                    <NumberInput groupLabel="Rotation" label="X" value={THREE.MathUtils.radToDeg(selectedActor.rotation.x)} onChange={(v) => updateRot('x', v)} step={5} />
+                    <NumberInput groupLabel="Rotation" label="Y" value={THREE.MathUtils.radToDeg(selectedActor.rotation.y)} onChange={(v) => updateRot('y', v)} step={5} />
+                    <NumberInput groupLabel="Rotation" label="Z" value={THREE.MathUtils.radToDeg(selectedActor.rotation.z)} onChange={(v) => updateRot('z', v)} step={5} />
                 </div>
              </div>
 
              <div className="flex flex-col gap-2 pt-4 border-t border-slate-800">
                 <label className="text-xs text-brand-green font-bold">Scale</label>
                 <div className="grid grid-cols-3 gap-2">
-                    <NumberInput label="X" value={selectedActor.scale.x} onChange={(v) => updateScale('x', v)} />
-                    <NumberInput label="Y" value={selectedActor.scale.y} onChange={(v) => updateScale('y', v)} />
-                    <NumberInput label="Z" value={selectedActor.scale.z} onChange={(v) => updateScale('z', v)} />
+                    <NumberInput groupLabel="Scale" label="X" value={selectedActor.scale.x} onChange={(v) => updateScale('x', v)} />
+                    <NumberInput groupLabel="Scale" label="Y" value={selectedActor.scale.y} onChange={(v) => updateScale('y', v)} />
+                    <NumberInput groupLabel="Scale" label="Z" value={selectedActor.scale.z} onChange={(v) => updateScale('z', v)} />
                 </div>
              </div>
 
@@ -206,11 +221,12 @@ export const PropertiesPanel: React.FC = () => {
                  <div className="flex flex-col gap-2 pt-4 border-t border-slate-800">
                      <label className="text-xs text-yellow-500 font-bold">Light Settings</label>
                      <div className="flex flex-col gap-1">
-                        <label className="text-xs text-slate-400">Intensity</label>
+                        <label className="text-xs text-slate-400" id="light-intensity-label">Intensity</label>
                         <input
                             type="range" min="0" max="10" step="0.1"
                             value={selectedActor.intensity || 1}
                             onChange={(e) => updateActor(selectedActor.id, { intensity: parseFloat(e.target.value) })}
+                            aria-labelledby="light-intensity-label"
                         />
                      </div>
                  </div>

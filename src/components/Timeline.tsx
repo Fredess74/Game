@@ -1,10 +1,9 @@
 import React, { useRef, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { Play, Pause, Square, Key, Video, Box, User, Lightbulb, Zap, Music } from 'lucide-react';
-import { interpolate } from '../engine/EasingFunctions';
 
 // Helper to get icon for actor type
-const getActorIcon = (type: string, shape?: string) => {
+const getActorIcon = (type: string) => {
     switch (type) {
         case 'character': return <User size={12} />;
         case 'prop': return <Box size={12} />;
@@ -186,7 +185,7 @@ export const Timeline: React.FC = () => {
                                 onClick={() => setSelected(actor.id)}
                                 className={`w-48 border-r border-slate-800 flex items-center px-4 gap-2 text-xs cursor-pointer truncate transition-colors ${selectedId === actor.id ? 'bg-brand-green/10 text-brand-green' : 'text-slate-400'}`}
                              >
-                                 {getActorIcon(actor.type, actor.shape)}
+                                 {getActorIcon(actor.type)}
                                  {actor.name}
                              </div>
 
