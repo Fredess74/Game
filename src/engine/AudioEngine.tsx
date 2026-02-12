@@ -67,6 +67,17 @@ export const AudioEngine: React.FC = () => {
     const actors = useStore((state) => state.actors);
     const soundActors = actors.filter(a => a.type === 'sound');
 
+    // Persistent vectors to avoid garbage collection
+    const forwardRef = useRef<THREE.Vector3 | null>(null);
+    const upRef = useRef<THREE.Vector3 | null>(null);
+
+    if (forwardRef.current === null) {
+        forwardRef.current = new THREE.Vector3();
+    }
+    if (upRef.current === null) {
+        upRef.current = new THREE.Vector3();
+    }
+
     useFrame(() => {
         // Update listener position for spatial audio
         // Tone.Listener wraps the Web Audio Listener
@@ -78,8 +89,9 @@ export const AudioEngine: React.FC = () => {
             Tone.Listener.positionZ.value = camera.position.z;
         }
 
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+        // We know these are initialized
+        const forward = forwardRef.current!.set(0, 0, -1).applyQuaternion(camera.quaternion);
+        const up = upRef.current!.set(0, 1, 0).applyQuaternion(camera.quaternion);
 
         if (Tone.Listener.forwardX) {
             Tone.Listener.forwardX.value = forward.x;
