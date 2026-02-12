@@ -39,7 +39,7 @@ export const ClothingSchema = z.object({
 
 export const PoseSchema = z.record(Vector3Schema);
 
-// INCOMING ZOD SCHEMAS
+// Advanced Graphics Properties Schemas
 export const ModelPropertiesSchema = z.object({
   url: z.string(),
   format: z.enum(['gltf', 'glb', 'obj', 'vox']),
