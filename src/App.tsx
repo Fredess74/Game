@@ -16,6 +16,7 @@ function App() {
   const isCameraView = useStore((state) => state.isCameraView);
   const setCameraView = useStore((state) => state.setCameraView);
   const isExporting = useStore((state) => state.isExporting);
+  const exportSettings = useStore((state) => state.exportSettings);
   const loadProject = useStore((state) => state.loadProject);
 
   const [showScriptConsole, setShowScriptConsole] = useState(false);
@@ -120,8 +121,14 @@ function App() {
         <AssetLibrary />
 
         <div className="flex-1 relative bg-slate-950 flex flex-col min-w-0">
-           <div className="flex-1 relative">
-             <Canvas shadows dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }}>
+           <div
+             className={isExporting ? 'fixed top-0 left-0 z-50 pointer-events-none bg-black' : 'flex-1 relative'}
+             style={isExporting ? {
+                width: exportSettings.resolution === '4k' ? 3840 : exportSettings.resolution === '720p' ? 1280 : 1920,
+                height: exportSettings.resolution === '4k' ? 2160 : exportSettings.resolution === '720p' ? 720 : 1080
+             } : {}}
+           >
+             <Canvas shadows dpr={isExporting ? 1 : [1, 2]} gl={{ preserveDrawingBuffer: true }}>
                 <PlaybackController />
                 <SceneManager />
                 <AudioEngine />

@@ -39,7 +39,7 @@ const SimpleTitleCard = ({ title, subtitle, opacity }: { title: string, subtitle
 }
 
 export const VideoExporter: React.FC = () => {
-    const { gl, setSize, size } = useThree();
+    const { gl } = useThree();
     const isExporting = useStore(s => s.isExporting);
     const setExporting = useStore(s => s.setExporting);
     const duration = useStore(s => s.duration);
@@ -52,7 +52,6 @@ export const VideoExporter: React.FC = () => {
 
     const mediaRecorder = useRef<MediaRecorder | null>(null);
     const chunks = useRef<Blob[]>([]);
-    const [originalSize, setOriginalSize] = useState<{ width: number, height: number } | null>(null);
     const [titleOpacity, setTitleOpacity] = useState(0);
 
     // Title Card Logic
@@ -79,18 +78,6 @@ export const VideoExporter: React.FC = () => {
     useEffect(() => {
         if (isExporting) {
             console.log("Starting Export...", exportSettings);
-
-            // 1. Save size and Resize
-            setOriginalSize({ width: size.width, height: size.height });
-
-            let width = 1920;
-            let height = 1080;
-            if (exportSettings.resolution === '720p') { width = 1280; height = 720; }
-            if (exportSettings.resolution === '4k') { width = 3840; height = 2160; }
-
-            // Force resize canvas (and buffer)
-            // Note: R3F might fight back if window resizes, but for now this sets the internal size
-            setSize(width, height);
 
             // 2. Setup Scene
             setCameraView(true);
@@ -131,12 +118,6 @@ export const VideoExporter: React.FC = () => {
             }, 1000); // 1s delay to stabilize resizing
 
             return () => clearTimeout(timer);
-        } else {
-            // Restore size if we have one
-            if (originalSize) {
-                setSize(originalSize.width, originalSize.height);
-                setOriginalSize(null);
-            }
         }
     }, [isExporting]); // Run when isExporting changes
 
