@@ -9,6 +9,7 @@ import { AudioEngine } from './engine/AudioEngine';
 import { VideoExporter } from './engine/VideoExporter';
 import { ScriptConsole } from './components/ScriptConsole';
 import { ExportModal } from './components/ExportModal';
+import { CinematicOverlay } from './components/CinematicOverlay';
 import { Camera, Video, Download, Upload, FileVideo, Zap } from 'lucide-react';
 import { useStore } from './store/useStore';
 
@@ -31,6 +32,7 @@ function App() {
         keyframes: state.keyframes,
         scenes: state.scenes,
         cameraCuts: state.cameraCuts,
+        overlays: state.overlays,
         duration: state.duration,
         backgroundColor: state.backgroundColor,
         gridVisible: state.gridVisible,
@@ -134,6 +136,9 @@ function App() {
                 <AudioEngine />
                 <VideoExporter />
              </Canvas>
+
+             {/* Cinematic Overlays */}
+             <CinematicOverlay />
 
              {/* Viewport Overlay Controls */}
              <div className="absolute top-4 left-4 bg-slate-900/80 p-1 rounded-md border border-slate-700 pointer-events-auto flex items-center gap-1 z-10 backdrop-blur-sm">
