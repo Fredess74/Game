@@ -1,10 +1,10 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 import { Play, Pause, Square, Key, Video, Box, User, Lightbulb, Zap, Music } from 'lucide-react';
-import { interpolate } from '../engine/EasingFunctions';
+import type { Actor, Keyframe } from '../types';
 
 // Helper to get icon for actor type
-const getActorIcon = (type: string, shape?: string) => {
+const getActorIcon = (type: string, _shape?: string) => {
     switch (type) {
         case 'character': return <User size={12} />;
         case 'prop': return <Box size={12} />;
@@ -15,6 +15,72 @@ const getActorIcon = (type: string, shape?: string) => {
         default: return <Box size={12} />;
     }
 };
+
+interface ActorTracksListProps {
+    actors: Actor[];
+    groupedKeyframes: Map<string, number[]>;
+    selectedId: string | null;
+    duration: number;
+    onSelect: (id: string) => void;
+    onTimelineClick: (e: React.MouseEvent) => void;
+}
+
+const ActorTracksList = React.memo(({ actors, groupedKeyframes, selectedId, duration, onSelect, onTimelineClick }: ActorTracksListProps) => {
+    return (
+        <>
+            {actors.filter(a => a.type !== 'camera').map(actor => {
+                 const distinctTimes = groupedKeyframes.get(actor.id) || [];
+
+                 return (
+                     <div key={actor.id} className="h-8 border-b border-slate-800 flex shrink-0 group hover:bg-slate-800/30 transition-colors">
+                         {/* Sidebar */}
+                         <div
+                            onClick={() => onSelect(actor.id)}
+                            className={`w-48 border-r border-slate-800 flex items-center px-4 gap-2 text-xs cursor-pointer truncate transition-colors ${selectedId === actor.id ? 'bg-brand-green/10 text-brand-green' : 'text-slate-400'}`}
+                         >
+                             {getActorIcon(actor.type, actor.shape)}
+                             {actor.name}
+                         </div>
+
+                         {/* Track Area */}
+                         <div className="flex-1 relative" onClick={onTimelineClick}>
+                             {/* Easing Lines (Preview) */}
+                             <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
+                                 {distinctTimes.map((t, i) => {
+                                     if (i === distinctTimes.length - 1) return null;
+                                     const nextT = distinctTimes[i+1];
+                                     const x1 = (t / duration) * 100;
+                                     const x2 = (nextT / duration) * 100;
+
+                                     return (
+                                         <line
+                                            key={i}
+                                            x1={`${x1}%`} y1="50%"
+                                            x2={`${x2}%`} y2="50%"
+                                            stroke="currentColor"
+                                            strokeWidth="1"
+                                            className="text-brand-green"
+                                         />
+                                     );
+                                 })}
+                             </svg>
+
+                             {/* Keyframe Dots */}
+                             {distinctTimes.map(time => (
+                                 <div
+                                     key={time}
+                                     className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-brand-green rotate-45 hover:scale-150 transition-transform cursor-pointer z-10"
+                                     style={{ left: `${(time / duration) * 100}%` }}
+                                     title={`Keyframe at ${time.toFixed(2)}s`}
+                                 ></div>
+                             ))}
+                         </div>
+                     </div>
+                 );
+             })}
+        </>
+    );
+});
 
 export const Timeline: React.FC = () => {
     const actors = useStore((state) => state.actors);
@@ -32,14 +98,36 @@ export const Timeline: React.FC = () => {
 
     const timelineRef = useRef<HTMLDivElement>(null);
 
-    const handleTimelineClick = (e: React.MouseEvent) => {
+    const handleTimelineClick = useCallback((e: React.MouseEvent) => {
         if (timelineRef.current) {
             const rect = timelineRef.current.getBoundingClientRect();
+            // The timelineRef is the ruler/scrubber area which aligns with the track area.
+            // We assume width is consistent.
             const x = e.clientX - rect.left;
             const percentage = Math.max(0, Math.min(1, x / rect.width));
             setTime(percentage * duration);
         }
-    };
+    }, [duration, setTime]);
+
+    // Memoize keyframes
+    const groupedKeyframes = useMemo(() => {
+        const map = new Map<string, number[]>();
+
+        // Group keyframes by targetId
+        const tempMap = new Map<string, Keyframe[]>();
+        keyframes.forEach(k => {
+             if (!tempMap.has(k.targetId)) tempMap.set(k.targetId, []);
+             tempMap.get(k.targetId)!.push(k);
+        });
+
+        // Compute distinct times
+        tempMap.forEach((kfs, id) => {
+            const distinctTimes = Array.from(new Set(kfs.map(k => k.time))).sort((a,b) => a-b);
+            map.set(id, distinctTimes);
+        });
+
+        return map;
+    }, [keyframes]);
 
     // Camera Segments
     const cameraSegments = useMemo(() => {
@@ -70,6 +158,7 @@ export const Timeline: React.FC = () => {
     const currentScene = useMemo(() => {
         return scenes.find(s => currentTime >= s.startTime && currentTime < s.endTime);
     }, [scenes, currentTime]);
+
 
     return (
         <div className="h-64 bg-slate-900 border-t border-brand-green/20 flex flex-col shrink-0 z-10 select-none">
@@ -150,86 +239,50 @@ export const Timeline: React.FC = () => {
              </div>
 
              {/* Tracks Container */}
-             <div className="flex-1 overflow-y-auto bg-slate-900 flex flex-col relative">
-                 {/* Camera Track */}
-                 <div className="flex border-b border-slate-800 bg-slate-950/50 h-6 shrink-0">
-                     <div className="w-48 border-r border-slate-800 flex items-center px-4 gap-2 text-xs text-slate-400 font-mono">
-                         <Video size={12} /> Camera Track
+             <div className="flex-1 relative min-h-0">
+                 <div className="absolute inset-0 overflow-y-auto bg-slate-900 flex flex-col">
+
+                     {/* Sticky Playhead Overlay */}
+                     <div className="sticky top-0 z-20 h-0 w-full pointer-events-none overflow-visible">
+                        <div className="flex h-0">
+                           <div className="w-48 shrink-0"></div>
+                           <div className="flex-1 relative h-0">
+                              <div className="absolute top-0 w-px bg-brand-green/20 h-screen" style={{ left: `${(currentTime / duration) * 100}%` }}></div>
+                           </div>
+                        </div>
                      </div>
-                     <div className="flex-1 relative" onClick={handleTimelineClick}>
-                         {cameraSegments.map((seg, i) => (
-                             <div
-                                key={i}
-                                className={`absolute top-1 bottom-1 rounded-sm text-[9px] flex items-center justify-center truncate px-1 transition-colors ${seg.isActive ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'}`}
-                                style={{
-                                    left: `${(seg.startTime / duration) * 100}%`,
-                                    width: `${((seg.endTime - seg.startTime) / duration) * 100}%`
-                                }}
-                             >
-                                 {seg.camName}
-                             </div>
-                         ))}
-                         {/* Playhead Line */}
-                         <div className="absolute top-0 bottom-0 w-px bg-brand-green/20 pointer-events-none" style={{ left: `${(currentTime / duration) * 100}%` }}></div>
-                     </div>
-                 </div>
 
-                 {/* Actor Tracks */}
-                 {actors.filter(a => a.type !== 'camera').map(actor => {
-                     const actorKeyframes = keyframes.filter(k => k.targetId === actor.id);
-                     const distinctTimes = Array.from(new Set(actorKeyframes.map(k => k.time))).sort((a,b) => a-b);
-
-                     return (
-                         <div key={actor.id} className="h-8 border-b border-slate-800 flex shrink-0 group hover:bg-slate-800/30 transition-colors">
-                             {/* Sidebar */}
-                             <div
-                                onClick={() => setSelected(actor.id)}
-                                className={`w-48 border-r border-slate-800 flex items-center px-4 gap-2 text-xs cursor-pointer truncate transition-colors ${selectedId === actor.id ? 'bg-brand-green/10 text-brand-green' : 'text-slate-400'}`}
-                             >
-                                 {getActorIcon(actor.type, actor.shape)}
-                                 {actor.name}
-                             </div>
-
-                             {/* Track Area */}
-                             <div className="flex-1 relative" onClick={handleTimelineClick}>
-                                 {/* Easing Lines (Preview) */}
-                                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
-                                     {distinctTimes.map((t, i) => {
-                                         if (i === distinctTimes.length - 1) return null;
-                                         const nextT = distinctTimes[i+1];
-                                         const x1 = (t / duration) * 100;
-                                         const x2 = (nextT / duration) * 100;
-
-                                         // Just a straight line for now to indicate connection
-                                         return (
-                                             <line
-                                                key={i}
-                                                x1={`${x1}%`} y1="50%"
-                                                x2={`${x2}%`} y2="50%"
-                                                stroke="currentColor"
-                                                strokeWidth="1"
-                                                className="text-brand-green"
-                                             />
-                                         );
-                                     })}
-                                 </svg>
-
-                                 {/* Keyframe Dots */}
-                                 {distinctTimes.map(time => (
-                                     <div
-                                         key={time}
-                                         className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-brand-green rotate-45 hover:scale-150 transition-transform cursor-pointer z-10"
-                                         style={{ left: `${(time / duration) * 100}%` }}
-                                         title={`Keyframe at ${time.toFixed(2)}s`}
-                                     ></div>
-                                 ))}
-
-                                 {/* Playhead Line */}
-                                 <div className="absolute top-0 bottom-0 w-px bg-brand-green/20 pointer-events-none" style={{ left: `${(currentTime / duration) * 100}%` }}></div>
-                             </div>
+                     {/* Camera Track */}
+                     <div className="flex border-b border-slate-800 bg-slate-950/50 h-6 shrink-0">
+                         <div className="w-48 border-r border-slate-800 flex items-center px-4 gap-2 text-xs text-slate-400 font-mono">
+                             <Video size={12} /> Camera Track
                          </div>
-                     );
-                 })}
+                         <div className="flex-1 relative" onClick={handleTimelineClick}>
+                             {cameraSegments.map((seg, i) => (
+                                 <div
+                                    key={i}
+                                    className={`absolute top-1 bottom-1 rounded-sm text-[9px] flex items-center justify-center truncate px-1 transition-colors ${seg.isActive ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'}`}
+                                    style={{
+                                        left: `${(seg.startTime / duration) * 100}%`,
+                                        width: `${((seg.endTime - seg.startTime) / duration) * 100}%`
+                                    }}
+                                 >
+                                     {seg.camName}
+                                 </div>
+                             ))}
+                         </div>
+                     </div>
+
+                     {/* Actor Tracks */}
+                     <ActorTracksList
+                        actors={actors}
+                        groupedKeyframes={groupedKeyframes}
+                        selectedId={selectedId}
+                        duration={duration}
+                        onSelect={setSelected}
+                        onTimelineClick={handleTimelineClick}
+                     />
+                 </div>
              </div>
         </div>
     );
