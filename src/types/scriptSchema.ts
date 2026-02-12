@@ -39,6 +39,25 @@ export const ClothingSchema = z.object({
 
 export const PoseSchema = z.record(Vector3Schema);
 
+// INCOMING ZOD SCHEMAS
+export const ModelPropertiesSchema = z.object({
+  url: z.string(),
+  format: z.enum(['gltf', 'glb', 'obj', 'vox']),
+});
+
+export const SpritePropertiesSchema = z.object({
+  url: z.string(),
+  billboardMode: z.boolean().default(true),
+  columns: z.number().optional(),
+  rows: z.number().optional(),
+  frameRate: z.number().optional(),
+});
+
+export const VoxelPropertiesSchema = z.object({
+  voxelData: z.string().optional(),
+  gridSize: z.number().optional(),
+});
+
 export const ActorSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -56,9 +75,16 @@ export const ActorSchema = z.object({
   rotation: Vector3Schema,
   scale: Vector3Schema,
   target: z.string().optional(), // For lights/cameras to look at actor ID
+
+  // Character specifics
   emotion: EmotionTypeSchema.optional(),
   clothing: ClothingSchema.optional(),
   pose: PoseSchema.optional(),
+
+  // Advanced Graphics Properties
+  model: ModelPropertiesSchema.optional(),
+  sprite: SpritePropertiesSchema.optional(),
+  voxel: VoxelPropertiesSchema.optional(),
 });
 
 export const CameraSchema = z.object({

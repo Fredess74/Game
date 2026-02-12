@@ -22,6 +22,24 @@ export interface Pose {
   [key: string]: Vector3;
 }
 
+export interface ModelProperties {
+  url: string;
+  format: 'gltf' | 'glb' | 'obj' | 'vox';
+}
+
+export interface SpriteProperties {
+  url: string;
+  billboardMode: boolean;
+  columns?: number;
+  rows?: number;
+  frameRate?: number;
+}
+
+export interface VoxelProperties {
+  voxelData?: string;
+  gridSize?: number;
+}
+
 export interface Actor {
   id: string;
   name: string;
@@ -55,6 +73,11 @@ export interface Actor {
   emotion?: EmotionType;
   clothing?: Clothing;
   pose?: Pose;
+
+  // Advanced Graphics Properties
+  model?: ModelProperties;
+  sprite?: SpriteProperties;
+  voxel?: VoxelProperties;
 }
 
 export interface Keyframe {
