@@ -71,6 +71,9 @@ export const CameraManager: React.FC = () => {
     // Ref for the active camera to update lookAt
     const cameraRef = useRef<THREE.PerspectiveCamera>(null);
 
+    // Cache the index of the lookAt target actor to avoid O(N) search every frame
+    const lookAtTargetIndexRef = useRef<number>(-1);
+
     useFrame(() => {
         if (isCameraView && activeCameraActor && cameraRef.current) {
             const cam = cameraRef.current;
@@ -80,7 +83,27 @@ export const CameraManager: React.FC = () => {
                 let targetPos = new THREE.Vector3(0, 0, 0);
                 if (typeof activeCameraActor.lookAt === 'string') {
                     // Look at actor
-                    const targetActor = actors.find(a => a.id === activeCameraActor.lookAt);
+                    const targetId = activeCameraActor.lookAt;
+                    let targetActor: Actor | undefined;
+
+                    // Optimistic lookup: Check if the cached index still points to the correct actor
+                    // This is O(1) in the steady state (playback), versus O(N) for .find()
+                    if (
+                        lookAtTargetIndexRef.current !== -1 &&
+                        actors[lookAtTargetIndexRef.current]?.id === targetId
+                    ) {
+                        targetActor = actors[lookAtTargetIndexRef.current];
+                    } else {
+                        // Cache miss or invalid: Search and update cache
+                        const idx = actors.findIndex(a => a.id === targetId);
+                        if (idx !== -1) {
+                            lookAtTargetIndexRef.current = idx;
+                            targetActor = actors[idx];
+                        } else {
+                            lookAtTargetIndexRef.current = -1;
+                        }
+                    }
+
                     if (targetActor) {
                         targetPos.set(targetActor.position.x, targetActor.position.y, targetActor.position.z);
                     }
