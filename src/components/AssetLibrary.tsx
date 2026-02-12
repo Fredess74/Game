@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../store/useStore';
-import type { ActorType, ShapeType, LightType } from '../types';
-import { Box, Circle, User, Music, Lightbulb, Zap, Mountain, Film, PlayCircle } from 'lucide-react';
+import type { ActorType, ShapeType } from '../types';
+import { User, Box, Circle, Mountain, Lightbulb, Zap, Film, PlayCircle } from 'lucide-react';
 
 export const AssetLibrary: React.FC = () => {
   const addActor = useStore((state) => state.addActor);

@@ -63,6 +63,23 @@ export interface Scene {
   endTime: number;
 }
 
+export interface EnvironmentSettings {
+  ground: {
+    color: string;
+    texture: string | null;
+    opacity: number;
+    gridVisible: boolean;
+  };
+  sky: {
+    color: string;
+    texture: string | null;
+  };
+  weather: {
+    type: "none" | "rain" | "snow";
+    intensity: number;
+  };
+}
+
 export interface ProjectState {
   actors: Actor[];
   keyframes: Keyframe[];
@@ -73,6 +90,7 @@ export interface ProjectState {
   isPlaying: boolean;
   duration: number;
   selectedId: string | null;
+  environment: EnvironmentSettings;
 
   // Environment
   backgroundColor: string;

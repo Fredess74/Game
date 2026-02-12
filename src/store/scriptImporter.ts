@@ -9,7 +9,7 @@ export const parseScript = (jsonString: string): { success: true, data: Partial<
     const result = ScriptSchema.safeParse(json);
 
     if (!result.success) {
-      const errorMsg = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join('\n');
+      const errorMsg = result.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join('\n');
       return { success: false, error: errorMsg };
     }
 

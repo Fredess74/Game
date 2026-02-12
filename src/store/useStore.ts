@@ -17,7 +17,6 @@ interface StoreState extends ProjectState {
   setExporting: (isExporting: boolean) => void;
   loadProject: (project: Partial<ProjectState>) => void;
 
-  // Environment
   setEnvironment: (updates: Partial<ProjectState>) => void;
   setExportSettings: (settings: ProjectState['exportSettings']) => void;
   setLastExportUrl: (url: string | null) => void;
@@ -51,7 +50,7 @@ const DEFAULT_CAMERA: Actor = {
 };
 
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   actors: [DEFAULT_CAMERA],
   keyframes: [],
   scenes: [],
@@ -64,6 +63,11 @@ export const useStore = create<StoreState>((set, get) => ({
   isExporting: false,
 
   // Environment
+  environment: {
+    ground: { color: '#ffffff', texture: null, opacity: 1, gridVisible: true },
+    sky: { color: '#1e293b', texture: null },
+    weather: { type: 'none', intensity: 0 },
+  },
   backgroundColor: '#1e293b',
   gridVisible: true,
   ambientLightIntensity: 0.5,
@@ -92,6 +96,7 @@ export const useStore = create<StoreState>((set, get) => ({
       scenes: project.scenes || state.scenes,
       cameraCuts: project.cameraCuts || state.cameraCuts,
       duration: project.duration || state.duration,
+      environment: project.environment || state.environment,
       backgroundColor: project.backgroundColor || state.backgroundColor,
       gridVisible: project.gridVisible !== undefined ? project.gridVisible : state.gridVisible,
       ambientLightIntensity: project.ambientLightIntensity !== undefined ? project.ambientLightIntensity : state.ambientLightIntensity,

@@ -1,8 +1,11 @@
 import React, { useRef } from 'react';
-import { TransformControls, Grid } from '@react-three/drei';
+import { TransformControls } from '@react-three/drei';
 import { useStore } from '../store/useStore';
 import { SceneObject } from './SceneObject';
 import { CameraManager } from './CameraManager';
+import { Ground } from './Environment/Ground';
+import { Sky } from './Environment/Sky';
+import { Weather } from './Environment/Weather';
 import * as THREE from 'three';
 
 // Wrapper to handle TransformControls locally
@@ -47,42 +50,24 @@ const SceneObjectWrapper = ({ actor }: { actor: any }) => {
 
 export const SceneManager: React.FC = () => {
   const actors = useStore((state) => state.actors);
-  const setSelected = useStore((state) => state.setSelected);
-  const isCameraView = useStore((state) => state.isCameraView);
-  const backgroundColor = useStore((state) => state.backgroundColor);
-  const gridVisible = useStore((state) => state.gridVisible);
   const ambientLightIntensity = useStore((state) => state.ambientLightIntensity);
   const ambientLightColor = useStore((state) => state.ambientLightColor);
   const fog = useStore((state) => state.fog);
 
   // Filter out cameras (they are handled by CameraManager)
-  // Also, lights are actors now, so we render them via SceneObjectWrapper which calls SceneObject
-  // SceneObject handles rendering <pointLight> etc.
-  // So we just filter out cameras.
   const sceneActors = actors.filter(a => a.type !== 'camera');
-
-  const handleBackgroundClick = () => {
-    setSelected(null);
-  };
 
   return (
     <>
-      <color attach="background" args={[backgroundColor]} />
+      <Sky />
 
       {fog && <fog attach="fog" args={[fog.color, fog.near, fog.far]} />}
 
       <ambientLight intensity={ambientLightIntensity} color={ambientLightColor} />
 
-      {/* Default directional light if no lights exist? Or just rely on user adding lights? */}
-      {/* To ensure scene isn't pitch black if script has no lights, maybe keep a weak one or rely on ambient. */}
-      {/* If script defines lights, they will be in sceneActors. */}
+      <Ground />
 
-      {gridVisible && <Grid infiniteGrid sectionColor="#4ade80" cellColor="#ffffff" fadeDistance={30} position={[0, -0.01, 0]} />}
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} onClick={handleBackgroundClick}>
-        <planeGeometry args={[100, 100]} />
-        <meshBasicMaterial visible={false} />
-      </mesh>
+      <Weather />
 
       <CameraManager />
 

@@ -19,6 +19,20 @@ export const EnvironmentSchema = z.object({
     far: z.number(),
   }).optional(),
   gridVisible: z.boolean().default(true),
+  ground: z.object({
+    color: z.string(),
+    texture: z.string().nullable(),
+    opacity: z.number(),
+    gridVisible: z.boolean(),
+  }).optional(),
+  sky: z.object({
+    color: z.string(),
+    texture: z.string().nullable(),
+  }).optional(),
+  weather: z.object({
+    type: z.enum(["none", "rain", "snow"]),
+    intensity: z.number(),
+  }).optional(),
 });
 
 export const ActorTypeSchema = z.enum(['character', 'prop', 'set_piece', 'light', 'vfx', 'camera']);
