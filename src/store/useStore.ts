@@ -1,81 +1,71 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Actor, ActorType, ShapeType, ProjectState, AnimationClip, AnimationEvent } from '../types';
+import type {
+  ProjectState,
+  Actor,
+  Timeline,
+  Environment,
+  Character,
+  ActorType,
+  Vector3
+} from '../types';
 import { getValueAtTime } from './utils';
+import { ProjectSchema } from '../types/schemas/project';
 
 interface StoreState extends ProjectState {
-  addActor: (type: ActorType, shape?: ShapeType, initialProps?: Partial<Actor>) => void;
+  addActor: (type: ActorType, initialProps?: Partial<Actor>) => void;
   removeActor: (id: string) => void;
-  updateActor: (id: string, updates: Partial<Actor>) => void;
+  updateActor: (id: string, updates: Partial<Actor> | ((prev: Actor) => Partial<Actor>)) => void;
   setSelected: (id: string | null) => void;
   setPlaying: (isPlaying: boolean) => void;
   setTime: (time: number) => void;
-  addKeyframe: (targetId: string, property: string) => void;
-
-  // Animation System
-  addClip: (clip: AnimationClip) => void;
-  addEvent: (event: AnimationEvent) => void;
-
-  isCameraView: boolean;
+  setEnvironment: (updates: Partial<Environment>) => void;
+  addKeyframe: (targetId: string, property: string, value: any) => void;
   setCameraView: (isCameraView: boolean) => void;
-  isExporting: boolean;
-  setExporting: (isExporting: boolean) => void;
-  loadProject: (project: Partial<ProjectState>) => void;
-
-  // Environment
-  setEnvironment: (updates: Partial<ProjectState>) => void;
   setExportSettings: (settings: ProjectState['exportSettings']) => void;
   setLastExportUrl: (url: string | null) => void;
+  loadProject: (project: Partial<ProjectState>) => void;
 }
 
-const DEFAULT_ACTOR: Partial<Actor> = {
-  position: { x: 0, y: 0, z: 0 },
-  rotation: { x: 0, y: 0, z: 0 },
-  scale: { x: 1, y: 1, z: 1 },
-  color: '#4ade80',
-  emissive: '#000000',
-  emissiveIntensity: 0,
-  opacity: 1,
-  visible: true,
+const DEFAULT_TRANSFORM = {
+  position: [0, 0, 0] as Vector3,
+  rotation: [0, 0, 0] as Vector3,
+  scale: [1, 1, 1] as Vector3,
 };
 
-const DEFAULT_CAMERA: Actor = {
-    id: 'main-camera',
-    name: 'Main Camera',
-    type: 'camera',
-    shape: 'box',
-    position: { x: 0, y: 2, z: 10 },
-    rotation: { x: 0, y: 0, z: 0 },
-    scale: { x: 1, y: 1, z: 1 },
-    color: '#ffffff',
-    emissive: '#000000',
-    emissiveIntensity: 0,
-    opacity: 1,
-    visible: true,
-    fov: 50,
+const DEFAULT_ENVIRONMENT: Environment = {
+  ambientLight: { intensity: 0.5, color: '#ffffff' },
+  skyColor: '#1e293b',
 };
 
+const DEFAULT_TIMELINE: Timeline = {
+  duration: 60,
+  cameraTrack: [],
+  animationTracks: [],
+};
 
-export const useStore = create<StoreState>((set) => ({
-  actors: [DEFAULT_CAMERA],
-  keyframes: [],
-  scenes: [],
-  cameraCuts: [],
-  clips: [],
-  events: [],
+// Deep merge helper
+const setNestedValue = (obj: any, path: string[], value: any) => {
+    const key = path[0];
+    if (path.length === 1) {
+        obj[key] = value;
+        return;
+    }
+    if (!obj[key]) obj[key] = {};
+    setNestedValue(obj[key], path.slice(1), value);
+};
+
+export const useStore = create<StoreState>((set, get) => ({
+  actors: [],
+  timeline: DEFAULT_TIMELINE,
+  environment: DEFAULT_ENVIRONMENT,
+  library: { clips: [] },
+
   currentTime: 0,
   isPlaying: false,
-  duration: 60,
   selectedId: null,
   isCameraView: false,
   isExporting: false,
-
-  // Environment
-  backgroundColor: '#1e293b',
-  gridVisible: true,
-  ambientLightIntensity: 0.5,
-  ambientLightColor: '#ffffff',
-  fog: undefined,
   exportSettings: {
       resolution: '1080p',
       fps: 30,
@@ -83,148 +73,145 @@ export const useStore = create<StoreState>((set) => ({
       title: 'My Movie',
       subtitle: 'Created with Fredess',
   },
-
   lastExportUrl: null,
 
   setCameraView: (isCameraView) => set({ isCameraView }),
   setExportSettings: (settings) => set({ exportSettings: settings }),
   setLastExportUrl: (url) => set({ lastExportUrl: url }),
-  setExporting: (isExporting) => set({ isExporting }),
-  setEnvironment: (updates) => set((state) => ({ ...state, ...updates })),
-
-  addClip: (clip) => set((state) => ({ clips: [...state.clips, clip] })),
-  addEvent: (event) => set((state) => ({ events: [...state.events, event] })),
-
-  loadProject: (project) => set((state) => ({
-      ...state,
-      actors: project.actors || state.actors,
-      keyframes: project.keyframes || state.keyframes,
-      scenes: project.scenes || state.scenes,
-      cameraCuts: project.cameraCuts || state.cameraCuts,
-      clips: project.clips || state.clips || [],
-      events: project.events || state.events || [],
-      duration: project.duration || state.duration,
-      backgroundColor: project.backgroundColor || state.backgroundColor,
-      gridVisible: project.gridVisible !== undefined ? project.gridVisible : state.gridVisible,
-      ambientLightIntensity: project.ambientLightIntensity !== undefined ? project.ambientLightIntensity : state.ambientLightIntensity,
-      ambientLightColor: project.ambientLightColor || state.ambientLightColor,
-      fog: project.fog || state.fog,
-      currentTime: 0,
-      isPlaying: false,
+  setEnvironment: (updates) => set((state) => ({
+    environment: { ...state.environment, ...updates }
   })),
 
-  addActor: (type, shape, initialProps) =>
-    set((state) => ({
-      actors: [
-        ...state.actors,
-        {
-          ...DEFAULT_ACTOR,
-          id: uuidv4(),
-          name: `${type}_${state.actors.length + 1}`,
-          type,
-          shape: shape || 'box',
-          position: {
-            x: (Math.random() - 0.5) * 5,
-            y: type === 'prop' ? 0.5 : 1,
-            z: (Math.random() - 0.5) * 5,
-          },
-          ...initialProps
-        } as Actor,
-      ],
-    })),
+  addActor: (type, initialProps) => set((state) => {
+    const id = uuidv4();
+    const baseActor = {
+      id,
+      name: `${type}_${state.actors.length + 1}`,
+      type,
+      transform: { ...DEFAULT_TRANSFORM },
+      visible: true,
+      ...initialProps
+    } as Actor;
 
-  removeActor: (id) =>
-    set((state) => ({
-      actors: state.actors.filter((a) => a.id !== id),
-      selectedId: state.selectedId === id ? null : state.selectedId,
-    })),
+    if (type === 'character') {
+       (baseActor as any).parts = [];
+       (baseActor as any).morphTargets = {};
+    }
 
-  updateActor: (id, updates) =>
-    set((state) => {
-        return {
-            actors: state.actors.map((a) => (a.id === id ? { ...a, ...updates } : a)),
-        };
+    return { actors: [...state.actors, baseActor] };
+  }),
+
+  removeActor: (id) => set((state) => ({
+    actors: state.actors.filter((a) => a.id !== id),
+    selectedId: state.selectedId === id ? null : state.selectedId,
+  })),
+
+  updateActor: (id, updates) => set((state) => ({
+    actors: state.actors.map((a) => {
+      if (a.id !== id) return a;
+      const newProps = typeof updates === 'function' ? updates(a) : updates;
+      return { ...a, ...newProps };
     }),
-
-  addKeyframe: (targetId, property) =>
-    set((state) => {
-        const actor = state.actors.find(a => a.id === targetId);
-        if (!actor) return state;
-
-        const value = (actor as any)[property];
-        if (value === undefined) return state;
-
-        const filteredKeyframes = state.keyframes.filter(
-            k => !(k.targetId === targetId && k.property === property && Math.abs(k.time - state.currentTime) < 0.01)
-        );
-
-        // Clone value to avoid reference issues
-        let clonedValue = value;
-        if (typeof value === 'object') {
-            clonedValue = { ...value };
-        }
-
-        return {
-            keyframes: [
-                ...filteredKeyframes,
-                {
-                    id: uuidv4(),
-                    targetId,
-                    property,
-                    time: state.currentTime,
-                    value: clonedValue,
-                    easing: 'linear',
-                }
-            ]
-        };
-    }),
+  })),
 
   setSelected: (id) => set({ selectedId: id }),
   setPlaying: (isPlaying) => set({ isPlaying }),
 
-  setTime: (time) =>
-    set((state) => {
-        const newTime = Math.max(0, Math.min(time, state.duration));
+  setTime: (time) => set((state) => {
+    // 1. Clamp time
+    const newTime = Math.max(0, Math.min(time, state.timeline.duration));
 
-        // 1. Level 1: Keyframes
-        const updatedActors = state.actors.map(actor => {
-            const actorKeyframes = state.keyframes.filter(k => k.targetId === actor.id);
-            if (actorKeyframes.length === 0) return actor;
+    // 2. Apply Animation Tracks
+    // We create a map of updates per actor to avoid excessive cloning
+    const updatesMap = new Map<string, any>();
 
-            const properties = Array.from(new Set(actorKeyframes.map(k => k.property)));
-            const updates: any = {};
-            properties.forEach(prop => {
-                const currentVal = (actor as any)[prop];
-                updates[prop] = getValueAtTime(state.keyframes, actor.id, prop, newTime, currentVal);
-            });
-            return { ...actor, ...updates };
-        });
+    state.timeline.animationTracks.forEach(track => {
+        const actorId = track.targetId;
+        const value = getValueAtTime(track.keyframes, newTime, null);
 
-        // 2. Level 2 & 3: Clips & Events (Foundation)
-        // For now, we just placeholder the integration.
-        // A real implementation would:
-        // a. Determine active clips from events (e.g., play_clip event at T < newTime)
-        // b. Apply clip tracks relative to the start time of the clip.
+        if (value !== null) {
+            if (!updatesMap.has(actorId)) updatesMap.set(actorId, {});
+            const actorUpdates = updatesMap.get(actorId);
+            setNestedValue(actorUpdates, track.property.split('.'), value);
+        }
+    });
 
-        // Example logic (commented out until Clip Editor is built):
-        /*
-        state.events.forEach(event => {
-            if (event.type === 'play_clip' && event.time <= newTime) {
-                const clip = state.clips.find(c => c.id === event.parameters.clipId);
-                if (clip) {
-                    const clipTime = newTime - event.time;
-                    if (clipTime <= clip.duration || event.parameters.loop) {
-                         const timeInClip = event.parameters.loop ? clipTime % clip.duration : clipTime;
-                         // Apply clip tracks to target actor...
-                    }
-                }
+    const updatedActors = state.actors.map(actor => {
+        if (updatesMap.has(actor.id)) {
+            // Merge deep updates? Ideally use a deep merge library, but for now strict replacement of top-level or specific nested is tricky.
+            // Our setNestedValue builds a partial object structure.
+            // E.g. { transform: { position: [...] } }
+            // We need to merge this into actor.
+            // For now, shallow merge of top level props is safe if we are careful.
+            // But 'transform' is an object. strict replacement might lose 'rotation' if we only set 'position'.
+
+            // Simplified approach: Re-apply updates carefully.
+            // Actually, let's use a simpler loop for now:
+            const updates = updatesMap.get(actor.id);
+            // We need to merge 'updates' into 'actor' deeply.
+            // Since we don't have Lodash, let's do a basic 2-level merge manually for known props.
+
+            const newActor = { ...actor };
+            if (updates.transform) {
+                newActor.transform = { ...newActor.transform, ...updates.transform };
             }
-        });
-        */
+            if (updates.morphTargets) {
+                newActor.morphTargets = { ...newActor.morphTargets, ...updates.morphTargets };
+            }
+            // For other props
+            Object.keys(updates).forEach(key => {
+                if (key !== 'transform' && key !== 'morphTargets') {
+                    (newActor as any)[key] = updates[key];
+                }
+            });
+            return newActor;
+        }
+        return actor;
+    });
 
-        return {
-            currentTime: newTime,
-            actors: updatedActors
-        };
-    }),
+    return {
+      currentTime: newTime,
+      actors: updatedActors
+    };
+  }),
+
+  addKeyframe: (targetId, property, value) => set((state) => {
+    const tracks = [...state.timeline.animationTracks];
+    let trackIndex = tracks.findIndex(t => t.targetId === targetId && t.property === property);
+
+    if (trackIndex === -1) {
+       tracks.push({
+         targetId,
+         property,
+         keyframes: []
+       });
+       trackIndex = tracks.length - 1;
+    }
+
+    const track = { ...tracks[trackIndex] };
+    track.keyframes = track.keyframes.filter(k => Math.abs(k.time - state.currentTime) > 0.01);
+
+    track.keyframes.push({
+      time: state.currentTime,
+      value,
+      easing: 'linear'
+    });
+
+    track.keyframes.sort((a, b) => a.time - b.time);
+    tracks[trackIndex] = track;
+
+    return {
+      timeline: {
+        ...state.timeline,
+        animationTracks: tracks
+      }
+    };
+  }),
+
+  loadProject: (project) => set((state) => ({
+      ...state,
+      ...project,
+      currentTime: 0,
+      isPlaying: false
+  })),
 }));

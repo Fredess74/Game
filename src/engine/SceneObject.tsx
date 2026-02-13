@@ -10,8 +10,9 @@ interface SceneObjectProps {
 }
 
 export const SceneObject: React.FC<SceneObjectProps> = ({ actor }) => {
-  // eslint-disable-next-line react/no-unstable-nested-components
-  const Renderer = React.useMemo(() => getRenderer(actor.type, actor.shape), [actor.type, actor.shape]);
+  // Use stable renderer reference based on type/properties
+  const Renderer = getRenderer(actor);
+
   const selectedId = useStore((state) => state.selectedId);
   const setSelected = useStore((state) => state.setSelected);
   const isCameraView = useStore((state) => state.isCameraView);
@@ -25,11 +26,11 @@ export const SceneObject: React.FC<SceneObjectProps> = ({ actor }) => {
 
   if (!actor.visible) return null;
 
-
-
-
   if (!Renderer) {
-    console.warn(`No renderer found for actor ${actor.name} (type: ${actor.type}, shape: ${actor.shape})`);
+    // safe access for logging
+    const type = actor.type;
+    const shape = type === 'primitive' ? (actor as any).properties?.shape : 'N/A';
+    console.warn(`No renderer found for actor ${actor.name} (type: ${type}, shape: ${shape})`);
     return null;
   }
 

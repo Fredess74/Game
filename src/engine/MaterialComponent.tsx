@@ -1,22 +1,37 @@
 import React from 'react';
 import type { Actor } from '../types';
 
-interface MaterialComponentProps {
-  actor: Actor;
-  isSelected: boolean;
+interface MaterialProps {
+    actor: Actor;
+    isSelected: boolean;
 }
 
-export const MaterialComponent: React.FC<MaterialComponentProps> = ({ actor, isSelected }) => {
+export const MaterialComponent: React.FC<MaterialProps> = ({ actor, isSelected }) => {
+    let color = '#ffffff';
+    let roughness = 0.5;
+    let metalness = 0.5;
+    let emissive = '#000000';
+    let emissiveIntensity = 0;
+
+    if (actor.type === 'primitive') {
+        const props = (actor as any).properties || {};
+        color = props.color || '#ffffff';
+        roughness = props.roughness ?? 0.5;
+        metalness = props.metalness ?? 0.5;
+    } else if (actor.type === 'prop' || actor.type === 'model') {
+        const props = (actor as any).properties || {};
+        if (props.materialOverride) {
+            color = props.materialOverride;
+        }
+    }
+
     return (
         <meshStandardMaterial
-            color={isSelected ? '#ef4444' : actor.color}
-            emissive={actor.emissive}
-            emissiveIntensity={actor.emissiveIntensity}
-            transparent={actor.opacity < 1}
-            opacity={actor.opacity}
-            metalness={actor.metalness ?? 0.1}
-            roughness={actor.roughness ?? 0.8}
-            wireframe={false}
+            color={isSelected ? '#ef4444' : color} // Override color on selection? Or just emissive?
+            roughness={roughness}
+            metalness={metalness}
+            emissive={isSelected ? '#ef4444' : emissive}
+            emissiveIntensity={isSelected ? 0.5 : emissiveIntensity}
         />
     );
 };
