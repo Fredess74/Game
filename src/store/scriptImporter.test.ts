@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseScript } from './scriptImporter';
-import { Script } from '../types/scriptSchema';
+import type { Script } from '../types/scriptSchema';
 
 describe('parseScript', () => {
   it('should successfully parse a valid script', () => {
