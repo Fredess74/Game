@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import * as THREE from 'three';
 import { useStore } from '../store/useStore';
-import { ChevronDown, ChevronRight, Eye, EyeOff, Trash2, Box, Image as ImageIcon, Grid, Video } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, EyeOff, Trash2, Box, Image as ImageIcon, Grid, Video, User } from 'lucide-react';
 
 export const PropertiesPanel: React.FC = () => {
   const selectedId = useStore((state) => state.selectedId);
