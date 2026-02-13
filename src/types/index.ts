@@ -37,6 +37,15 @@ export interface Actor {
   // Camera specifics
   fov?: number;
   lookAt?: string | Vector3; // ID or static point
+  // Humanoid
+  emotion?: "neutral" | "happy" | "sad" | "angry" | "surprised";
+  clothing?: { head?: string; top?: string; bottom?: string; shoes?: string; accessory?: string; };
+  pose?: Record<string, Vector3>;
+
+  // External Models
+  model?: { url: string; format: "gltf" | "glb" | "obj" | "vox"; };
+  sprite?: { url: string; billboardMode?: boolean; columns?: number; rows?: number; frameRate?: number; };
+  voxel?: { voxelData?: string; gridSize?: number; };
 }
 
 export interface Keyframe {
