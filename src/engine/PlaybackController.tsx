@@ -6,9 +6,10 @@ export const PlaybackController = () => {
   // We access state directly inside the loop.
 
   useFrame((_, delta) => {
-    const { isPlaying, currentTime, setTime, duration } = useStore.getState();
+    const { isPlaying, currentTime, setTime, timeline } = useStore.getState();
 
     if (isPlaying) {
+      const duration = timeline.duration;
       let newTime = currentTime + delta;
 
       if (newTime >= duration) {

@@ -1,15 +1,15 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { PerspectiveCamera, OrbitControls, Html } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useStore } from '../store/useStore';
 import * as THREE from 'three';
-import type { Actor } from '../types';
+import type { Actor, CameraCut } from '../types';
 
 const CameraHelperVisual: React.FC<{ cameraActor: Actor; isSelected: boolean; onClick: (e: any) => void }> = ({ cameraActor, isSelected, onClick }) => {
     return (
         <group
-            position={[cameraActor.position.x, cameraActor.position.y, cameraActor.position.z]}
-            rotation={[cameraActor.rotation.x, cameraActor.rotation.y, cameraActor.rotation.z]}
+            position={cameraActor.transform.position}
+            rotation={cameraActor.transform.rotation}
             onClick={onClick}
         >
             {/* Camera Body */}
@@ -44,63 +44,79 @@ const CameraHelperVisual: React.FC<{ cameraActor: Actor; isSelected: boolean; on
 export const CameraManager: React.FC = () => {
     const isCameraView = useStore(s => s.isCameraView);
     const actors = useStore(s => s.actors);
-    const cameraCuts = useStore(s => s.cameraCuts);
+    const cameraTrack = useStore(s => s.timeline.cameraTrack);
     const currentTime = useStore(s => s.currentTime);
     const selectedId = useStore(s => s.selectedId);
     const setSelected = useStore(s => s.setSelected);
 
     const cameraActors = useMemo(() => actors.filter(a => a.type === 'camera'), [actors]);
 
-    // Determine active camera based on cuts
-    const sortedCuts = useMemo(() => {
-        return [...cameraCuts].sort((a, b) => a.time - b.time);
-    }, [cameraCuts]);
-
+    // Determine active cut
     const activeCut = useMemo(() => {
-        let active = null;
-        for (const cut of sortedCuts) {
+        // Find the last cut that is <= currentTime
+        let active: CameraCut | null = null;
+        for (const cut of cameraTrack) {
             if (cut.time <= currentTime) {
                 active = cut;
             } else {
-                break;
+                break; // Assumes sorted by time
             }
         }
         return active;
-    }, [sortedCuts, currentTime]);
+    }, [cameraTrack, currentTime]);
 
-    const activeCameraId = activeCut ? activeCut.cameraId : (cameraActors.length > 0 ? cameraActors[0].id : null);
+    const activeCameraId = activeCut ? activeCut.cameraId : (cameraActors.length > 0 ? cameraActors[0]?.id : null);
     const activeCameraActor = cameraActors.find(a => a.id === activeCameraId);
 
-    // Ref for the active camera to update lookAt
-    const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+    // Type guard / safe access
+    const camProps = activeCameraActor && activeCameraActor.type === 'camera' ? (activeCameraActor as any).properties : {};
 
+    // Ref for the active camera
+    const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+    const { set } = useThree();
+
+    // Sync camera every frame to follow actor
     useFrame(() => {
         if (isCameraView && activeCameraActor && cameraRef.current) {
             const cam = cameraRef.current;
-            cam.position.set(activeCameraActor.position.x, activeCameraActor.position.y, activeCameraActor.position.z);
+            const pos = activeCameraActor.transform.position;
+            const rot = activeCameraActor.transform.rotation;
 
-            if (activeCameraActor.lookAt) {
-                const targetPos = new THREE.Vector3(0, 0, 0);
-                if (typeof activeCameraActor.lookAt === 'string') {
-                    // Look at actor
-                    const targetActor = actors.find(a => a.id === activeCameraActor.lookAt);
+            cam.position.set(pos[0], pos[1], pos[2]);
+
+            // Handle LookAt
+            const lookAt = camProps.lookAt;
+            if (lookAt) {
+                const targetPos = new THREE.Vector3();
+                if (typeof lookAt === 'string') {
+                    // Look at actor ID
+                    const targetActor = actors.find(a => a.id === lookAt);
                     if (targetActor) {
-                        targetPos.set(targetActor.position.x, targetActor.position.y, targetActor.position.z);
+                        const tPos = targetActor.transform.position;
+                        targetPos.set(tPos[0], tPos[1], tPos[2]);
                     }
-                } else if (typeof activeCameraActor.lookAt === 'object') {
-                    // Static point
-                    const p = activeCameraActor.lookAt as any; // {x,y,z}
-                    targetPos.set(p.x, p.y, p.z);
+                } else if (Array.isArray(lookAt)) {
+                    // Static point [x,y,z]
+                    targetPos.set(lookAt[0], lookAt[1], lookAt[2]);
                 }
                 cam.lookAt(targetPos);
             } else {
-                // Use rotation if no lookAt
-                cam.rotation.set(activeCameraActor.rotation.x, activeCameraActor.rotation.y, activeCameraActor.rotation.z);
+                // Use explicit rotation if no lookAt
+                cam.rotation.set(rot[0], rot[1], rot[2]);
             }
 
             cam.updateProjectionMatrix();
         }
     });
+
+    // Set default camera when entering camera view
+    useEffect(() => {
+        if (isCameraView && cameraRef.current) {
+            set({ camera: cameraRef.current });
+        } else {
+            // Revert to OrbitControls camera? Usually OrbitControls handles this by 'makeDefault'
+        }
+    }, [isCameraView, set]);
 
     return (
         <>
@@ -108,15 +124,14 @@ export const CameraManager: React.FC = () => {
                 <PerspectiveCamera
                     ref={cameraRef}
                     makeDefault
-                    fov={activeCameraActor.fov || 50}
-                    near={0.1}
-                    far={1000}
+                    fov={camProps.fov || 50}
+                    near={camProps.near || 0.1}
+                    far={camProps.far || 1000}
                 />
             ) : (
                 <>
                     <OrbitControls makeDefault />
-
-                    {/* Render all cameras as helpers */}
+                    {/* Render helpers */}
                     {cameraActors.map(cam => (
                         <CameraHelperVisual
                             key={cam.id}

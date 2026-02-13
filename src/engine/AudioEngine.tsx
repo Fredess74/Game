@@ -13,7 +13,8 @@ const SoundEmitter: React.FC<{ actor: Actor }> = ({ actor }) => {
 
     useEffect(() => {
         // Initialize nodes
-        pannerRef.current = new Tone.Panner3D(actor.position.x, actor.position.y, actor.position.z).toDestination();
+        const pos = actor.transform.position;
+        pannerRef.current = new Tone.Panner3D(pos[0], pos[1], pos[2]).toDestination();
 
         // Simple synth for sound effects
         synthRef.current = new Tone.Synth({
@@ -55,7 +56,8 @@ const SoundEmitter: React.FC<{ actor: Actor }> = ({ actor }) => {
     // Update position
     useFrame(() => {
         if (pannerRef.current) {
-            pannerRef.current.setPosition(actor.position.x, actor.position.y, actor.position.z);
+            const pos = actor.transform.position;
+            pannerRef.current.setPosition(pos[0], pos[1], pos[2]);
         }
     });
 
@@ -80,16 +82,12 @@ export const AudioEngine: React.FC = () => {
 
     useFrame(() => {
         // Update listener position for spatial audio
-        // Tone.Listener wraps the Web Audio Listener
-        // We check for availability of properties
-
         if (Tone.Listener.positionX) {
             Tone.Listener.positionX.value = camera.position.x;
             Tone.Listener.positionY.value = camera.position.y;
             Tone.Listener.positionZ.value = camera.position.z;
         }
 
-        // We know these are initialized
         const forward = forwardRef.current!.set(0, 0, -1).applyQuaternion(camera.quaternion);
         const up = upRef.current!.set(0, 1, 0).applyQuaternion(camera.quaternion);
 

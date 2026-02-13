@@ -12,25 +12,27 @@ export type ActorRenderer = React.FC<ActorRendererProps>;
 
 const registry: Map<string, ActorRenderer> = new Map();
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getKey = (type: ActorType, shape?: ShapeType) => {
-  if (type === 'light' || type === 'camera' || type === 'sound') {
-    return type;
-  }
-  return shape || type;
-};
-
 export const registerRenderer = (key: string, component: ActorRenderer) => {
   registry.set(key, component);
 };
 
-export const getRenderer = (type: ActorType, shape?: ShapeType): ActorRenderer | undefined => {
-  if (shape && registry.has(shape)) return registry.get(shape);
-  if (registry.has(type)) return registry.get(type);
-  if (type === 'character') return registry.get('humanoid');
-  return registry.get('box');
+export const getRenderer = (actor: Actor): ActorRenderer | undefined => {
+  // 1. Check strict type match
+  if (registry.has(actor.type)) return registry.get(actor.type);
+
+  // 2. Check for shape if primitive
+  if (actor.type === 'primitive') {
+     // @ts-ignore - TS might not narrow correctly without type guard
+     const shape = actor.properties?.shape;
+     if (shape && registry.has(shape)) return registry.get(shape);
+  }
+
+  // 3. Fallbacks
+  if (actor.type === 'character') return registry.get('humanoid'); // Should be covered by step 1 if registered
+
+  return registry.get('box'); // Ultimate fallback
 };
 
 export const useActorRenderer = (actor: Actor) => {
-  return getRenderer(actor.type, actor.shape);
+  return getRenderer(actor);
 };

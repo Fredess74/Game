@@ -42,7 +42,7 @@ export const VideoExporter: React.FC = () => {
     const { gl } = useThree();
     const isExporting = useStore(s => s.isExporting);
     const setExporting = useStore(s => s.setExporting);
-    const duration = useStore(s => s.duration);
+    const duration = useStore(s => s.timeline.duration);
     const currentTime = useStore(s => s.currentTime);
     const setPlaying = useStore(s => s.setPlaying);
     const setTime = useStore(s => s.setTime);

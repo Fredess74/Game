@@ -1,131 +1,46 @@
-export interface Vector3 {
-  x: number;
-  y: number;
-  z: number;
-}
+import { z } from 'zod';
+import {
+  ProjectSchema,
+  ActorDataSchema,
+  CharacterSchema,
+  TimelineSchema,
+  CameraCutSchema,
+  AnimationClipSchema,
+  KeyframeSchema,
+  EnvironmentSchema
+} from './schemas';
 
-export type ActorType = 'character' | 'prop' | 'set_piece' | 'light' | 'camera' | 'vfx' | 'sound' | 'model' | 'sprite' | 'voxel';
-export type ShapeType = 'box' | 'sphere' | 'capsule' | 'cylinder' | 'cone' | 'torus' | 'plane' | 'humanoid' | 'cube_character' | 'model' | 'sprite' | 'voxel';
-export type LightType = 'point' | 'spot' | 'directional';
-export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'easeInBack' | 'easeOutBounce' | 'step';
+// Re-export Schema Types
+export type Project = z.infer<typeof ProjectSchema>;
+export type Actor = z.infer<typeof ActorDataSchema>;
+export type Character = z.infer<typeof CharacterSchema>;
+export type Timeline = z.infer<typeof TimelineSchema>;
+export type CameraCut = z.infer<typeof CameraCutSchema>;
+export type AnimationClip = z.infer<typeof AnimationClipSchema>;
+export type Keyframe = z.infer<typeof KeyframeSchema>;
+export type Environment = z.infer<typeof EnvironmentSchema>;
 
-export interface ModelProperties {
-  url: string;
-  format: 'gltf' | 'glb' | 'obj' | 'vox';
-}
+// Primitive Types
+export type Vector3 = [number, number, number];
+export type ActorType = Actor['type'];
 
-export interface SpriteProperties {
-  url: string;
-  billboardMode: boolean; // Always face camera
-  columns?: number; // For sprite sheets
-  rows?: number;    // For sprite sheets
-  frameRate?: number; // For sprite sheets
-}
-
-export interface VoxelProperties {
-  voxelData?: string; // Base64 or raw data string for voxel grids
-  gridSize?: number;
-}
-
-export interface Actor {
-  id: string;
-  name: string;
-  type: ActorType;
-  shape: ShapeType; // default to 'box' if not applicable
-
-  // Transform
-  position: Vector3;
-  rotation: Vector3;
-  scale: Vector3;
-
-  // Visuals
-  color: string;
-  emissive: string;
-  emissiveIntensity: number;
-  opacity: number;
-  visible: boolean;
-  metalness?: number;
-  roughness?: number;
-
-  // Light specifics
-  lightType?: LightType;
-  intensity?: number;
-  target?: string; // ID of actor to look at
-
-  // Camera specifics
-  fov?: number;
-  lookAt?: string | Vector3; // ID or static point
-
-  // Advanced Graphics Properties
-  model?: ModelProperties;
-  sprite?: SpriteProperties;
-  voxel?: VoxelProperties;
-}
-
-export interface Keyframe {
-  id: string;
-  targetId: string;
-  property: string; // 'position', 'rotation', 'scale', 'emissiveIntensity', 'opacity', etc.
-  time: number;
-  value: Vector3 | number; // Vector3 for transform, number for scalars
-  easing: EasingType;
-}
-
-export interface AnimationClip {
-  id: string;
-  name: string;
-  duration: number;
-  tracks: Keyframe[]; // Reusing Keyframe interface but time is relative to clip start
-}
-
-export interface AnimationEvent {
-  id: string;
-  time: number;
-  type: 'play_clip' | 'stop_clip' | 'set_property' | 'custom';
-  targetId: string;
-  parameters: Record<string, any>; // e.g., { clipId: 'walk_loop', loop: true }
-}
-
-export interface CameraCut {
-  id: string;
-  time: number;
-  cameraId: string;
-  transition: 'cut' | 'smooth';
-  transitionDuration?: number;
-}
-
-export interface Scene {
-  id: string;
-  name: string;
-  startTime: number;
-  endTime: number;
-}
-
+// Project State (Runtime)
+// Extending Project Schema with runtime-only fields
 export interface ProjectState {
+  // Data (Mapped from Schema)
   actors: Actor[];
-  keyframes: Keyframe[];
-  scenes: Scene[];
-  cameraCuts: CameraCut[];
+  timeline: Timeline;
+  environment: Environment;
+  library: Project['library'];
 
-  // New Animation System
-  clips: AnimationClip[];
-  events: AnimationEvent[];
-
+  // Runtime State
   currentTime: number;
   isPlaying: boolean;
-  duration: number;
   selectedId: string | null;
 
-  // Environment
-  backgroundColor: string;
-  gridVisible: boolean;
-  ambientLightIntensity: number;
-  ambientLightColor: string;
-  fog?: {
-    color: string;
-    near: number;
-    far: number;
-  };
+  // Editor Settings
+  isCameraView: boolean;
+  isExporting: boolean;
   exportSettings: {
     resolution: '720p' | '1080p' | '4k';
     fps: number;

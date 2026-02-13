@@ -1,31 +1,20 @@
 import React from 'react';
-import { Billboard, Image } from '@react-three/drei';
+import { useLoader } from '@react-three/fiber';
+import * as THREE from 'three';
 import type { ActorRendererProps } from '../registry/ActorRegistry';
 
-export const SpriteRenderer: React.FC<ActorRendererProps> = ({ actor, isSelected, onSelect }) => {
-  if (!actor.sprite?.url) return (
-      <Billboard position={[0, 0, 0]} onClick={onSelect}>
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial color="magenta" />
-      </Billboard>
-  );
+export const SpriteRenderer: React.FC<ActorRendererProps> = ({ actor, onSelect }) => {
+    // Basic sprite rendering
+    const props = (actor as any).properties || {};
+    const url = props.url;
 
-  return (
-    <Billboard
-        position={[0, 0, 0]}
-        follow={actor.sprite.billboardMode ?? true}
-        lockX={false}
-        lockY={false}
-        lockZ={false}
-        onClick={onSelect}
-    >
-        <Image
-            url={actor.sprite.url}
-            transparent
-            opacity={actor.opacity ?? 1}
-            color={isSelected ? '#4ade80' : undefined}
-            scale={isSelected ? 1.05 : 1}
-        />
-    </Billboard>
-  );
+    if (!url) return null;
+
+    const texture = useLoader(THREE.TextureLoader, url);
+
+    return (
+        <sprite onClick={onSelect} scale={[1, 1, 1]}>
+            <spriteMaterial map={texture} />
+        </sprite>
+    );
 };
