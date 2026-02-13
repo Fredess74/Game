@@ -5,3 +5,4 @@ export * from './timeline';
 export * from './animation';
 export * from './actor'; // This imports CharacterSchema too
 export * from './project';
+export * from './cowboy';

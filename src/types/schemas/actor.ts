@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { CharacterSchema } from './character';
+import { CowboySchema } from './cowboy';
 import { TransformSchema, UUIDSchema, ColorSchema, Vector3Schema } from './common';
 
 export const ActorTypeSchema = z.enum([
-  'character', 'prop', 'light', 'camera', 'model', 'sprite', 'voxel', 'vfx', 'primitive', 'sound'
+  'character', 'cowboy', 'prop', 'light', 'camera', 'model', 'sprite', 'voxel', 'vfx', 'primitive', 'sound'
 ]);
 
 // Base Actor Properties (Transform, ID, Visibility)
@@ -56,6 +57,7 @@ export const ModelPropertiesSchema = z.object({
 // Discriminated Union for Actor Data
 export const ActorDataSchema = z.discriminatedUnion('type', [
   CharacterSchema, // Character has its own schema with 'type: "character"'
+  CowboySchema, // Cowboy has its own schema with 'type: "cowboy"'
   BaseActorSchema.extend({
     type: z.literal('camera'),
     properties: CameraPropertiesSchema,
@@ -78,7 +80,7 @@ export const ActorDataSchema = z.discriminatedUnion('type', [
   }),
   // Fallback for others currently
   BaseActorSchema.extend({
-      type: z.enum(['sprite', 'voxel', 'vfx']),
+      type: z.enum(['sprite', 'voxel', 'vfx', 'sound']),
       properties: z.record(z.any()).optional(),
   })
 ]);

@@ -7,6 +7,7 @@ import { ModelRenderer } from '../renderers/ModelRenderer';
 import { SpriteRenderer } from '../renderers/SpriteRenderer';
 import { VoxelRenderer } from '../renderers/VoxelRenderer';
 import { ModularCharacter } from '../ModularCharacter';
+import { CowboyCharacter } from '../CowboyCharacter';
 
 // Register standard shapes
 registerRenderer('box', BoxRenderer);
@@ -21,14 +22,14 @@ registerRenderer('light', LightRenderer);
 // Adapters
 const HumanoidAdapter: any = (props: any) => React.createElement(Humanoid, { ...props, onClick: props.onSelect });
 const ModularCharacterAdapter: any = (props: any) => React.createElement(ModularCharacter, { ...props, onClick: props.onSelect });
+const CowboyAdapter: any = (props: any) => React.createElement(CowboyCharacter, { ...props, onClick: props.onSelect });
 
 // Register characters
 registerRenderer('humanoid', HumanoidAdapter);
-
-// MAIN CHARACTER RENDERER
 registerRenderer('character', ModularCharacterAdapter);
+registerRenderer('cowboy', CowboyAdapter);
 
-registerRenderer('prop', ModelRenderer); // Use ModelRenderer for props
+registerRenderer('prop', ModelRenderer);
 registerRenderer('model', ModelRenderer);
 registerRenderer('sprite', SpriteRenderer);
 registerRenderer('voxel', VoxelRenderer);
