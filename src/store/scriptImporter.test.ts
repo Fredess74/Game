@@ -172,3 +172,12 @@ describe('parseScript', () => {
         }
     });
 });
+
+    it('should return error for script exceeding size limit', () => {
+        const largeString = 'a'.repeat(5 * 1024 * 1024 + 1);
+        const result = parseScript(largeString);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toContain('Script too large');
+        }
+    });

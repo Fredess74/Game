@@ -1,15 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ScriptSchema } from '../types/scriptSchema';
 import type { Script } from '../types/scriptSchema';
-import type { ProjectState, Actor, Keyframe, Scene, Vector3, ShapeType, ActorType, LightType } from '../types';
+import type { ProjectState, Actor, Keyframe, Scene, Vector3, ShapeType, ActorType, LightType, EasingType } from '../types';
+
+const MAX_SCRIPT_SIZE = 5 * 1024 * 1024; // 5MB
 
 export const parseScript = (jsonString: string): { success: true, data: Partial<ProjectState> } | { success: false, error: string } => {
+  if (jsonString.length > MAX_SCRIPT_SIZE) {
+    return { success: false, error: "Script too large (max 5MB)" };
+  }
+
   try {
     const json = JSON.parse(jsonString);
     const result = ScriptSchema.safeParse(json);
 
     if (!result.success) {
-      const errorMsg = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join('\n');
+      const errorMsg = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('\n');
       return { success: false, error: errorMsg };
     }
 
@@ -121,7 +127,7 @@ export const parseScript = (jsonString: string): { success: true, data: Partial<
             property: ak.property,
             time: f.time,
             value: value,
-            easing: (f.easing as any) || 'linear',
+            easing: (f.easing as EasingType) || 'linear',
           };
           state.keyframes!.push(keyframe);
         });
@@ -133,7 +139,7 @@ export const parseScript = (jsonString: string): { success: true, data: Partial<
 
     return { success: true, data: state };
 
-  } catch (e: any) {
-    return { success: false, error: "Invalid JSON format: " + e.message };
+  } catch (e) {
+    return { success: false, error: "Invalid JSON format: " + (e as Error).message };
   }
 };
