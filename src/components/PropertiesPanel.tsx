@@ -64,6 +64,8 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => updateActor(selectedActor.id, { visible: !selectedActor.visible })}
                         className={`p-1.5 rounded transition-colors ${selectedActor.visible ? 'text-gray-400 hover:text-white' : 'text-red-500 bg-red-500/10'}`}
                         title="Toggle Visibility"
+                        aria-label={selectedActor.visible ? `Hide ${selectedActor.name}` : `Show ${selectedActor.name}`}
+                        aria-pressed={!selectedActor.visible}
                     >
                         {selectedActor.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
@@ -71,14 +73,16 @@ export const PropertiesPanel: React.FC = () => {
                         onClick={() => removeActor(selectedActor.id)}
                         className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                         title="Delete"
+                        aria-label={`Delete ${selectedActor.name}`}
                     >
                         <Trash2 size={14} />
                     </button>
                 </div>
             </div>
             <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-gray-500">Name</label>
+                <label htmlFor="actor-name" className="text-[10px] uppercase font-bold text-gray-500">Name</label>
                 <input
+                    id="actor-name"
                     type="text"
                     value={selectedActor.name}
                     onChange={(e) => updateActor(selectedActor.id, { name: e.target.value })}
@@ -106,9 +110,9 @@ export const PropertiesPanel: React.FC = () => {
                     <div className="space-y-3 p-1">
                          {props.color !== undefined && (
                              <div className="flex items-center justify-between">
-                                 <label className="text-xs text-gray-400">Color</label>
+                                 <label htmlFor="prop-color" className="text-xs text-gray-400">Color</label>
                                  <div className="flex items-center gap-2">
-                                     <input type="color" value={props.color} onChange={(e) => updateProperty('color', e.target.value)} className="w-6 h-6 rounded cursor-pointer bg-transparent border-none" />
+                                     <input id="prop-color" type="color" value={props.color} onChange={(e) => updateProperty('color', e.target.value)} className="w-6 h-6 rounded cursor-pointer bg-transparent border-none" />
                                      <span className="text-xs font-mono text-gray-500">{props.color}</span>
                                  </div>
                              </div>
@@ -117,10 +121,11 @@ export const PropertiesPanel: React.FC = () => {
                          {props.intensity !== undefined && (
                              <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-gray-400">
-                                    <span>Intensity</span>
+                                    <label htmlFor="prop-intensity">Intensity</label>
                                     <span>{props.intensity}</span>
                                 </div>
                                 <input
+                                    id="prop-intensity"
                                     type="range" min="0" max="10" step="0.1"
                                     value={props.intensity}
                                     onChange={(e) => updateProperty('intensity', parseFloat(e.target.value))}
@@ -132,10 +137,11 @@ export const PropertiesPanel: React.FC = () => {
                          {props.fov !== undefined && (
                              <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-gray-400">
-                                    <span>FOV</span>
+                                    <label htmlFor="prop-fov">FOV</label>
                                     <span>{props.fov}</span>
                                 </div>
                                 <input
+                                    id="prop-fov"
                                     type="range" min="10" max="120" step="1"
                                     value={props.fov}
                                     onChange={(e) => updateProperty('fov', parseFloat(e.target.value))}
@@ -152,10 +158,11 @@ export const PropertiesPanel: React.FC = () => {
                     <div className="space-y-3 p-1">
                          <div className="space-y-1">
                             <div className="flex justify-between text-xs text-gray-400">
-                                <span>Roughness</span>
+                                <label htmlFor="prop-roughness">Roughness</label>
                                 <span>{props.roughness ?? 0.5}</span>
                             </div>
                             <input
+                                id="prop-roughness"
                                 type="range" min="0" max="1" step="0.01"
                                 value={props.roughness ?? 0.5}
                                 onChange={(e) => updateProperty('roughness', parseFloat(e.target.value))}
@@ -164,10 +171,11 @@ export const PropertiesPanel: React.FC = () => {
                          </div>
                          <div className="space-y-1">
                             <div className="flex justify-between text-xs text-gray-400">
-                                <span>Metalness</span>
+                                <label htmlFor="prop-metalness">Metalness</label>
                                 <span>{props.metalness ?? 0.5}</span>
                             </div>
                             <input
+                                id="prop-metalness"
                                 type="range" min="0" max="1" step="0.01"
                                 value={props.metalness ?? 0.5}
                                 onChange={(e) => updateProperty('metalness', parseFloat(e.target.value))}
@@ -200,6 +208,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
         <div className="border border-gray-700 rounded bg-[#0f172a] overflow-hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
                 className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-700 transition-colors text-xs font-bold uppercase tracking-wide text-gray-200"
             >
                 <span>{title}</span>
@@ -214,18 +223,19 @@ const Vector3Input: React.FC<{ label: string; value: { x: number, y: number, z: 
     <div className="space-y-1">
         <label className="text-[10px] font-bold text-gray-500 uppercase">{label}</label>
         <div className="grid grid-cols-3 gap-1">
-            <NumberInput label="X" value={value.x} onChange={(v) => onChange('x', v)} step={step} color="text-red-400" />
-            <NumberInput label="Y" value={value.y} onChange={(v) => onChange('y', v)} step={step} color="text-green-400" />
-            <NumberInput label="Z" value={value.z} onChange={(v) => onChange('z', v)} step={step} color="text-blue-400" />
+            <NumberInput label="X" value={value.x} onChange={(v) => onChange('x', v)} step={step} color="text-red-400" ariaLabel={`${label} X`} />
+            <NumberInput label="Y" value={value.y} onChange={(v) => onChange('y', v)} step={step} color="text-green-400" ariaLabel={`${label} Y`} />
+            <NumberInput label="Z" value={value.z} onChange={(v) => onChange('z', v)} step={step} color="text-blue-400" ariaLabel={`${label} Z`} />
         </div>
     </div>
 );
 
-const NumberInput: React.FC<{ label: string; value: number; onChange: (v: number) => void; step?: number; color?: string }> = ({ label, value, onChange, step = 0.1, color = 'text-gray-400' }) => (
+const NumberInput: React.FC<{ label: string; value: number; onChange: (v: number) => void; step?: number; color?: string; ariaLabel?: string }> = ({ label, value, onChange, step = 0.1, color = 'text-gray-400', ariaLabel }) => (
     <div className="relative group">
         <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold pointer-events-none ${color}`}>{label}</span>
         <input
             type="number"
+            aria-label={ariaLabel || label}
             value={Math.round(value * 100) / 100}
             onChange={(e) => onChange(parseFloat(e.target.value))}
             step={step}
