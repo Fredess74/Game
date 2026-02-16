@@ -1,14 +1,15 @@
-import React from 'react';
-import { Download, Video, Box, Layers } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Download, Video, Box, Layers, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Header: React.FC = () => {
   const {
     isExporting, setExporting,
     isCameraView, setCameraView,
-
     loadProject
   } = useStore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
     setExporting(true);
@@ -42,13 +43,15 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-1 bg-editor-bg rounded p-1">
            <button
              onClick={() => setCameraView(false)}
-             className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${!isCameraView ? 'bg-editor-panel text-white shadow-sm' : 'text-editor-muted hover:text-white'}`}
+             aria-pressed={!isCameraView}
+             className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-editor-accent/50 ${!isCameraView ? 'bg-editor-panel text-white shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Box size={14} /> Editor
            </button>
            <button
              onClick={() => setCameraView(true)}
-             className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${isCameraView ? 'bg-editor-accent text-black shadow-sm' : 'text-editor-muted hover:text-white'}`}
+             aria-pressed={isCameraView}
+             className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-editor-accent/50 ${isCameraView ? 'bg-editor-accent text-black shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Video size={14} /> Camera
            </button>
@@ -57,19 +60,31 @@ export const Header: React.FC = () => {
 
       <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="btn-secondary cursor-pointer flex items-center gap-2">
+            <button
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-secondary flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-editor-accent/50"
+                aria-label="Load project from JSON"
+            >
                 <Layers size={14} /> Load JSON
-                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-            </label>
+            </button>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileUpload}
+                className="hidden"
+                aria-hidden="true"
+                tabIndex={-1}
+            />
           </div>
 
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20"
+            className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-editor-accent/50"
           >
-            {isExporting ? <span className="animate-spin">⟳</span> : <Download size={16} />}
-            <span>Export Video</span>
+            {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            <span>{isExporting ? 'Exporting...' : 'Export Video'}</span>
           </button>
       </div>
     </header>
