@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Download, Video, Box, Layers } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
@@ -9,6 +9,8 @@ export const Header: React.FC = () => {
 
     loadProject
   } = useStore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
     setExporting(true);
@@ -27,6 +29,11 @@ export const Header: React.FC = () => {
       }
     };
     reader.readAsText(file);
+    e.target.value = ''; // Reset input so same file can be selected again
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -42,12 +49,14 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-1 bg-editor-bg rounded p-1">
            <button
              onClick={() => setCameraView(false)}
+             aria-pressed={!isCameraView}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${!isCameraView ? 'bg-editor-panel text-white shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Box size={14} /> Editor
            </button>
            <button
              onClick={() => setCameraView(true)}
+             aria-pressed={isCameraView}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${isCameraView ? 'bg-editor-accent text-black shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Video size={14} /> Camera
@@ -57,15 +66,26 @@ export const Header: React.FC = () => {
 
       <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="btn-secondary cursor-pointer flex items-center gap-2">
+            <button
+              onClick={handleUploadClick}
+              className="btn-secondary cursor-pointer flex items-center gap-2"
+            >
                 <Layers size={14} /> Load JSON
-                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-            </label>
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="hidden"
+              ref={fileInputRef}
+            />
           </div>
 
           <button
             onClick={handleExport}
             disabled={isExporting}
+            aria-busy={isExporting}
+            aria-label={isExporting ? "Exporting video..." : "Export Video"}
             className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20"
           >
             {isExporting ? <span className="animate-spin">⟳</span> : <Download size={16} />}
