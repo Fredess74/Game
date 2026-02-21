@@ -46,11 +46,11 @@ export const Timeline: React.FC = () => {
        {/* Timeline Toolbar */}
        <div className="h-10 border-b border-gray-700 flex items-center justify-between px-4 bg-[#0f172a]">
           <div className="flex items-center gap-2">
-             <button onClick={() => setTime(0)} className="p-1 hover:text-white text-gray-400"><SkipBack size={16} /></button>
-             <button onClick={handlePlayToggle} className="p-1 hover:text-white text-[#4ade80]">
+             <button onClick={() => setTime(0)} className="p-1 hover:text-white text-gray-400" aria-label="Skip to Start" title="Skip to Start"><SkipBack size={16} /></button>
+             <button onClick={handlePlayToggle} className="p-1 hover:text-white text-[#4ade80]" aria-label={isPlaying ? "Pause" : "Play"} title={isPlaying ? "Pause" : "Play"}>
                 {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
              </button>
-             <button onClick={() => setTime(duration)} className="p-1 hover:text-white text-gray-400"><SkipForward size={16} /></button>
+             <button onClick={() => setTime(duration)} className="p-1 hover:text-white text-gray-400" aria-label="Skip to End" title="Skip to End"><SkipForward size={16} /></button>
              <div className="w-px h-4 bg-gray-700 mx-2" />
              <div className="font-mono text-xs text-[#4ade80]">
                 {currentTime.toFixed(2)}s <span className="text-gray-500">/ {duration}s</span>
@@ -70,12 +70,21 @@ export const Timeline: React.FC = () => {
        {/* Tracks Area */}
        <div className="flex-1 flex overflow-hidden">
           {/* Track Headers (Left) */}
-          <div className="w-60 border-r border-gray-700 bg-[#1e293b] flex flex-col overflow-y-auto">
+          <div className="w-60 border-r border-gray-700 bg-[#1e293b] flex flex-col overflow-y-auto" role="listbox" aria-label="Tracks">
               {actors.map(actor => (
                   <div
                     key={actor.id}
                     onClick={() => setSelected(actor.id)}
-                    className={`h-8 px-4 flex items-center justify-between text-xs border-b border-gray-700 cursor-pointer hover:bg-gray-700 transition-colors ${selectedId === actor.id ? 'bg-gray-700 text-[#4ade80] border-l-2 border-l-[#4ade80]' : 'text-gray-400'}`}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelected(actor.id);
+                        }
+                    }}
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={selectedId === actor.id}
+                    className={`h-8 px-4 flex items-center justify-between text-xs border-b border-gray-700 cursor-pointer hover:bg-gray-700 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-[#4ade80] focus-visible:ring-inset ${selectedId === actor.id ? 'bg-gray-700 text-[#4ade80] border-l-2 border-l-[#4ade80]' : 'text-gray-400'}`}
                   >
                       <div className="flex items-center gap-2 overflow-hidden">
                           <Layers size={12} />
