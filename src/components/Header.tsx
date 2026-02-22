@@ -1,8 +1,9 @@
-import React from 'react';
-import { Download, Video, Box, Layers } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Download, Video, Box, Layers, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export const Header: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     isExporting, setExporting,
     isCameraView, setCameraView,
@@ -42,12 +43,14 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-1 bg-editor-bg rounded p-1">
            <button
              onClick={() => setCameraView(false)}
+             aria-pressed={!isCameraView}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${!isCameraView ? 'bg-editor-panel text-white shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Box size={14} /> Editor
            </button>
            <button
              onClick={() => setCameraView(true)}
+             aria-pressed={isCameraView}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${isCameraView ? 'bg-editor-accent text-black shadow-sm' : 'text-editor-muted hover:text-white'}`}
            >
              <Video size={14} /> Camera
@@ -57,19 +60,33 @@ export const Header: React.FC = () => {
 
       <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="btn-secondary cursor-pointer flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-secondary cursor-pointer flex items-center gap-2"
+              aria-label="Load project from JSON file"
+            >
                 <Layers size={14} /> Load JSON
-                <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-            </label>
+            </button>
           </div>
 
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20"
+            aria-busy={isExporting}
+            aria-label={isExporting ? "Exporting video, please wait" : "Export video"}
+            className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20 disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            {isExporting ? <span className="animate-spin">⟳</span> : <Download size={16} />}
-            <span>Export Video</span>
+            {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            <span>{isExporting ? 'Exporting...' : 'Export Video'}</span>
           </button>
       </div>
     </header>
