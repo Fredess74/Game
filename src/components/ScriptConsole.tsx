@@ -135,7 +135,11 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({ onClose }) => {
         <h2 className="text-editor-accent font-bold text-sm tracking-wider flex items-center gap-2">
           ⚡ AI SCRIPT IMPORT
         </h2>
-        <button onClick={onClose} className="text-editor-muted hover:text-white transition-colors">
+        <button
+          onClick={onClose}
+          className="text-editor-muted hover:text-white transition-colors"
+          aria-label="Close"
+        >
           <X size={16} />
         </button>
       </div>

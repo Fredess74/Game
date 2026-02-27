@@ -43,12 +43,14 @@ export const Header: React.FC = () => {
            <button
              onClick={() => setCameraView(false)}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${!isCameraView ? 'bg-editor-panel text-white shadow-sm' : 'text-editor-muted hover:text-white'}`}
+             aria-pressed={!isCameraView}
            >
              <Box size={14} /> Editor
            </button>
            <button
              onClick={() => setCameraView(true)}
              className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${isCameraView ? 'bg-editor-accent text-black shadow-sm' : 'text-editor-muted hover:text-white'}`}
+             aria-pressed={isCameraView}
            >
              <Video size={14} /> Camera
            </button>
@@ -67,6 +69,8 @@ export const Header: React.FC = () => {
             onClick={handleExport}
             disabled={isExporting}
             className="btn-primary flex items-center gap-2 shadow-lg shadow-editor-accent/20"
+            aria-busy={isExporting}
+            aria-label={isExporting ? "Exporting video..." : "Export Video"}
           >
             {isExporting ? <span className="animate-spin">⟳</span> : <Download size={16} />}
             <span>Export Video</span>
