@@ -46,11 +46,30 @@ export const Timeline: React.FC = () => {
        {/* Timeline Toolbar */}
        <div className="h-10 border-b border-gray-700 flex items-center justify-between px-4 bg-[#0f172a]">
           <div className="flex items-center gap-2">
-             <button onClick={() => setTime(0)} className="p-1 hover:text-white text-gray-400"><SkipBack size={16} /></button>
-             <button onClick={handlePlayToggle} className="p-1 hover:text-white text-[#4ade80]">
+             <button
+                onClick={() => setTime(0)}
+                className="p-1 hover:text-white text-gray-400 rounded focus-visible:ring-2 focus-visible:ring-editor-accent focus-visible:outline-none"
+                aria-label="Skip to start"
+                title="Skip to start"
+             >
+                <SkipBack size={16} />
+             </button>
+             <button
+                onClick={handlePlayToggle}
+                className="p-1 hover:text-white text-[#4ade80] rounded focus-visible:ring-2 focus-visible:ring-editor-accent focus-visible:outline-none"
+                aria-label={isPlaying ? "Pause" : "Play"}
+                title={isPlaying ? "Pause" : "Play"}
+             >
                 {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
              </button>
-             <button onClick={() => setTime(duration)} className="p-1 hover:text-white text-gray-400"><SkipForward size={16} /></button>
+             <button
+                onClick={() => setTime(duration)}
+                className="p-1 hover:text-white text-gray-400 rounded focus-visible:ring-2 focus-visible:ring-editor-accent focus-visible:outline-none"
+                aria-label="Skip to end"
+                title="Skip to end"
+             >
+                <SkipForward size={16} />
+             </button>
              <div className="w-px h-4 bg-gray-700 mx-2" />
              <div className="font-mono text-xs text-[#4ade80]">
                 {currentTime.toFixed(2)}s <span className="text-gray-500">/ {duration}s</span>
@@ -60,7 +79,8 @@ export const Timeline: React.FC = () => {
              <button
                 onClick={handleAddKeyframe}
                 disabled={!selectedId}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-700 hover:bg-[#4ade80] hover:text-black disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-700 hover:bg-[#4ade80] hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-editor-accent focus-visible:outline-none"
+                title={!selectedId ? "Select an actor to add a keyframe" : "Add keyframe"}
              >
                 <Plus size={12} /> Keyframe
              </button>
