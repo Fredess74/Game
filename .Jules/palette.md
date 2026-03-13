@@ -1,0 +1,3 @@
+## 2024-05-18 - Tooltips and ARIA Labels on Icon-Only Buttons
+**Learning:** Icon-only buttons (like those in the Timeline toolbar) are invisible to screen readers without an `aria-label`, and users lack context without a native tooltip (`title`). Furthermore, disabled buttons without explanation lead to confusion, and `cursor-not-allowed` provides immediate visual feedback.
+**Action:** Ensure all icon-only buttons receive both `aria-label` and `title` attributes. For conditionally disabled buttons, make the `title` dynamic to explain why it's disabled, and apply the `disabled:cursor-not-allowed` class.
