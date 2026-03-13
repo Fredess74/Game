@@ -1,0 +1,3 @@
+## 2024-05-18 - Timeline Toolbar Accessibility
+**Learning:** Icon-only playback controls without tooltips or ARIA labels make it difficult for screen reader users and those seeking clarification to understand what each button does. Disabled action buttons (like "Keyframe") also cause confusion if the reason for being disabled is not stated.
+**Action:** Always provide `aria-label` and `title` to icon-only buttons. Add dynamic `title` texts to disabled buttons to explain *why* they are disabled, and pair it with `disabled:cursor-not-allowed` for clear visual feedback. Apply keyboard focus rings using `focus-visible:ring-2` to support accessibility properly.
