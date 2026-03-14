@@ -1,0 +1,3 @@
+## 2024-05-18 - Tooltip added for keyframe button accessibility
+**Learning:** Found that the timeline controls, specifically the "Add Keyframe" button, was difficult to understand why it was disabled since it requires selecting an actor first. The icon-only play controls also lacked `aria-labels` and tooltips. Adding dynamic tooltips greatly improved the UX for identifying the necessary steps.
+**Action:** Applied tooltips, ARIA labels, visual focus indicators (`focus-visible:ring-2 focus-visible:ring-editor-accent`), and visually indicated disabled state (`disabled:cursor-not-allowed`) to `Timeline.tsx` to ensure accessibility rules are met.
