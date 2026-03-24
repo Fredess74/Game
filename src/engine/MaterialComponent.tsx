@@ -10,8 +10,8 @@ export const MaterialComponent: React.FC<MaterialProps> = ({ actor, isSelected }
     let color = '#ffffff';
     let roughness = 0.5;
     let metalness = 0.5;
-    let emissive = '#000000';
-    let emissiveIntensity = 0;
+    const emissive = '#000000';
+    const emissiveIntensity = 0;
 
     if (actor.type === 'primitive') {
         const props = (actor as any).properties || {};
