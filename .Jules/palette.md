@@ -1,0 +1,3 @@
+## 2025-03-27 - Timeline Toolbar Keyboard Accessibility
+**Learning:** Icon-only playback controls in the Timeline lacked screen reader support and keyboard focus indicators, making them completely inaccessible. Additionally, disabled buttons in the toolbar did not clearly communicate *why* they were disabled to sighted users via tooltips or visual cues (`cursor-not-allowed`).
+**Action:** When working on toolbars or icon-heavy interfaces, proactively add `aria-label`, `title`, and `focus-visible` styles. For toggle buttons like Play/Pause, ensure `aria-pressed` accurately reflects the state. Disabled buttons should explain the requirement in their `title` and visually communicate the state change.
