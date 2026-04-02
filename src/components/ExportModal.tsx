@@ -35,7 +35,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <Download size={20} className="text-editor-accent" />
                 Export Settings
             </h2>
-            <button onClick={onClose} className="text-editor-muted hover:text-white transition-colors">
+            <button onClick={onClose} className="text-editor-muted hover:text-white transition-colors" aria-label="Close" title="Close">
                 <X size={20} />
             </button>
          </div>
