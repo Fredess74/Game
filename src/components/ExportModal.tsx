@@ -35,7 +35,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <Download size={20} className="text-editor-accent" />
                 Export Settings
             </h2>
-            <button onClick={onClose} className="text-editor-muted hover:text-white transition-colors">
+            <button onClick={onClose} aria-label="Close" className="text-editor-muted hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-editor-accent focus-visible:outline-none rounded">
                 <X size={20} />
             </button>
          </div>
@@ -45,10 +45,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ onClose }) => {
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-editor-muted uppercase tracking-wider">Resolution</label>
                     <div className="grid grid-cols-3 gap-2">
-                        {['720p', '1080p', '4k'].map((res) => (
+                        {(['720p', '1080p', '4k'] as const).map((res) => (
                             <button
                                 key={res}
-                                onClick={() => setLocalSettings({ ...localSettings, resolution: res as any })}
+                                onClick={() => setLocalSettings({ ...localSettings, resolution: res })}
                                 className={`py-2 px-3 rounded text-sm font-medium border transition-all ${localSettings.resolution === res ? 'bg-editor-accent text-black border-editor-accent shadow-lg shadow-editor-accent/20' : 'bg-editor-input text-editor-text border-transparent hover:border-editor-border'}`}
                             >
                                 {res}
