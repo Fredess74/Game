@@ -1,0 +1,3 @@
+## 2024-05-13 - Focus-Visible and ARIA labels in Timeline Toolbar
+**Learning:** Icon-only buttons without `aria-label`s provide no context to screen readers, and buttons lacking `focus-visible` styles make keyboard navigation difficult. Furthermore, dynamically disabled buttons without an explanation tooltip leave users confused as to why they are unclickable.
+**Action:** When creating toolbars with multiple icon-only buttons, consistently apply `aria-label`s, `title` tooltips, and standard `focus-visible` classes to ensure full keyboard and screen reader accessibility. Ensure dynamically disabled buttons have a `disabled:cursor-not-allowed` class and a dynamic `title` explaining the disabled state.
