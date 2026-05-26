@@ -1,0 +1,3 @@
+## 2024-05-26 - Timeline Toolbar Accessibility
+**Learning:** Icon-only buttons in dense editor toolbars (like timelines) lack both screen reader context and mouse hover context. Disabled states without explanations cause confusion in state-dependent workflows (like requiring a selection before adding keyframes).
+**Action:** Always pair `aria-label` with `title` on icon-only buttons. Add dynamic `title` attributes to disabled buttons to explain the prerequisite condition (e.g., "Select an actor to add keyframe"). Add `focus-visible` styles to ensure keyboard navigation visibility within dark mode panels.
