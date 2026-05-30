@@ -1,0 +1,3 @@
+## 2024-05-24 - Timeline Toolbar Accessibility Polish
+**Learning:** Icon-only buttons in complex toolbars (like a timeline player) desperately need `aria-label`s for screen readers and `title`s for visual tooltips. Furthermore, disabled buttons (like 'Add Keyframe') greatly benefit from dynamic tooltips explaining *why* they are disabled (e.g., 'Select an actor to add a keyframe') and `disabled:cursor-not-allowed` styles, preventing user confusion.
+**Action:** When adding or modifying icon-centric toolbars or disabled states in this app, always ensure these properties are present to maintain a high baseline of accessibility and usability.
