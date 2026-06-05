@@ -1,0 +1,3 @@
+## 2024-06-06 - Interactive State Semantics in Playback Controls
+**Learning:** For dynamic toggle buttons like Play/Pause that flip both their icon and visual state, relying solely on `aria-label` swaps (e.g., "Play" to "Pause") is insufficient. The `aria-pressed` attribute is crucial to programmatically communicate the toggle switch nature of the button to assistive technologies, making the current state unambiguous regardless of visual presentation.
+**Action:** Always include `aria-pressed={state}` on any icon-only toggle button that acts as a switch, rather than just changing the `aria-label`.
