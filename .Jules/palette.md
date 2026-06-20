@@ -1,0 +1,4 @@
+
+## 2024-05-18 - Timeline Toolbar Keyboard Navigation
+**Learning:** The project relies on Tailwind v4 with arbitrary values for focus rings when standard tokens aren't available for a specific component's hardcoded palette. Native tooltips (`title`) alongside `aria-label`s are necessary for icon-only toolbar buttons to remain discoverable for mouse users while supporting screen readers. Furthermore, adding tooltips to explicitly explain *why* an action is currently disabled (e.g. "Select an actor to add a keyframe" instead of just "Add Keyframe") removes guesswork.
+**Action:** When working on isolated components using distinct hex colors like `#4ade80`, use `focus-visible:ring-[#4ade80]` to maintain visual cohesion with keyboard accessibility. Ensure all disabled states have visual feedback (`disabled:cursor-not-allowed`) and a context-aware `title` attribute.
